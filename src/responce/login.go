@@ -17,5 +17,8 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 	if postgres.AuthUser(email, password) == true {
 		fmt.Println("User logged in")
 		http.Redirect(w, r, "/home", 200)
+	} else {
+		fmt.Println("Logging failed")
+		http.Redirect(w, r, "/login", 301)
 	}
 }

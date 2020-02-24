@@ -25,7 +25,7 @@ func InitTables() {
 		log.Println(" InitTables error. Err: " + err.Error())
 	}
 
-	query = "CREATE TABLE IF NOT EXISTS matcha.users_data (id SERIAL PRIMARY KEY, username VARCHAR(64) NOT NULL, password VARCHAR(255) NOT NULL, unique_key VARCHAR(255) NOT NULL, acc_state SMALLINT DEFAULT 0)"
+	query = "CREATE TABLE IF NOT EXISTS matcha.users_data (id SERIAL PRIMARY KEY, username VARCHAR(64) NOT NULL, email VARCHAR(255) NOT NULL UNIQUE, password VARCHAR(255) NOT NULL, unique_key VARCHAR(255) NOT NULL, acc_state SMALLINT DEFAULT 0)"
 	_, err = dbConn.DB.Exec(context.Background(), query)
 	if err != nil {
 		log.Println(" InitTables error. Err: " + err.Error())
@@ -33,15 +33,19 @@ func InitTables() {
 	fmt.Println("Tables initialized")
 }
 
-func InsertUserData(userName, password, uniqueKey string) {
+func InsertUserData(userName, email, password, uniqueKey string) bool {
 	dbConn := getConnection()
 	defer dbConn.DB.Close(context.Background())
 
-	query := "INSERT INTO matcha.users_data(username, password, unique_key) VALUES($1, $2, $3)"
-	_, err := dbConn.DB.Exec(context.Background(), query, userName, password, uniqueKey)
+	query := "INSERT INTO matcha.users_data(username, email, password, unique_key) VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING"
+	result, err := dbConn.DB.Exec(context.Background(), query, userName, email, password, uniqueKey)
 	if err != nil {
 		log.Println(" InsertUserData error. Err: " + err.Error())
 	}
+	if result.RowsAffected() < 1 {
+		return false
+	}
+	return true
 }
 
 func AuthUser(email, password string) bool {
@@ -50,11 +54,26 @@ func AuthUser(email, password string) bool {
 	dbConn := getConnection()
 	defer dbConn.DB.Close(context.Background())
 
-	query := "SELECT FROM matcha.users_data (password) WHERE email=$1"
+	query := "SELECT password FROM matcha.users_data WHERE email=$1"
 	resultRow := dbConn.DB.QueryRow(context.Background(), query, email)
 	resultRow.Scan(&databasePassword)
 	err := bcrypt.CompareHashAndPassword([]byte(databasePassword), []byte(password))
 	if err != nil {
+		return false
+	}
+	return true
+}
+
+func VerifyAccount(vkey string) bool  {
+	dbConn := getConnection()
+	defer dbConn.DB.Close(context.Background())
+
+	query := "UPDATE matcha.users_data SET acc_state=1 WHERE unique_key=$1 AND acc_state=0"
+	result, err := dbConn.DB.Exec(context.Background(), query, vkey)
+	if err != nil {
+		log.Println(" VerifyAccount error. Err: " + err.Error())
+	}
+	if result.RowsAffected() < 1 {
 		return false
 	}
 	return true

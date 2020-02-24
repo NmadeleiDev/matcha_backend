@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"net/smtp"
 	"strings"
 	"time"
 )
@@ -17,6 +18,7 @@ func SignupPage(w http.ResponseWriter, r *http.Request) {
 
 func Signup(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
+	email := r.FormValue("email")
 	password := r.FormValue("passwd1")
 	passwordConfirm := r.FormValue("passwd2")
 	if strings.Compare(password, passwordConfirm) != 0 {
@@ -24,13 +26,49 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uniqueKey := utils.GetMD5(username + password + time.Now().String())
+	uniqueKey := utils.GetMD5(time.Now().String() + username + password)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Fatal(" InsertUserData error. Err: " + err.Error())
 	}
-	postgres.InsertUserData(username, string(hashedPassword), uniqueKey)
-	w.Write([]byte("Account " + username + " successfully created"))
-	fmt.Println("Account created")
+	queryResult := postgres.InsertUserData(username, email, string(hashedPassword), uniqueKey)
+	if queryResult == false {
+		fmt.Println("Account " + username + " already exists")
+		http.Redirect(w, r, "/", 301)
+	} else {
+		fmt.Println("Account " + username + " created")
+		sendVerifEmail(email, uniqueKey)
+		http.Redirect(w, r, "/", 200)
+	}
+}
 
+func sendVerifEmail(email, vkey string) {
+	auth := smtp.PlainAuth("", "saveencrypteddata@gmail.com", "LYwu4>wT", "smtp.gmail.com")
+
+	// Here we do it all: connect to our server, set up a message and send it
+	to := []string{email}
+	msg := []byte("To: " + email + "\r\n" +
+		"Subject: Follow this link to verify your account:\r\n" +
+		"\r\n" + "http://localhost:8080/verify?key=" + vkey + "\r\n")
+	err := smtp.SendMail("smtp.gmail.com:587", auth, "saveencrypteddata@gmail.com", to, msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func VerifyEmail(w http.ResponseWriter, r *http.Request)  {
+	vkey, ok := r.URL.Query()["key"]
+	if !ok || len(vkey[0]) < 10 {
+		fmt.Println("Some shit with vkey")
+		return
+	}
+	fmt.Println("Got vkey: " + vkey[0])
+	result := postgres.VerifyAccount(vkey[0])
+	if result {
+		fmt.Println("Validated")
+		http.Redirect(w, r, "/", 200)
+	} else {
+		fmt.Println("Vkey is invalid")
+		http.Redirect(w, r, "/signup", 200)
+	}
 }

@@ -15,6 +15,6 @@ func IsEmpty(data string) bool {
 
 func GetMD5(input string) string  {
 	h := md5.New()
-	result := fmt.Sprintf("%x", h.Sum(nil))
+	result := fmt.Sprintf("%x", h.Sum([]byte(input)))
 	return result
 }
