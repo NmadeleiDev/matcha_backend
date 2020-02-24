@@ -1,36 +1,49 @@
 package postgres
 
 import (
-	"database/sql"
-	"golang.org/x/crypto/bcrypt"
-	_ "github.com/lib/pq"
+	"context"
+	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 type DBHandler struct {
-	DB *sql.DB
+	DB *pgx.Conn
 }
 
 func InitTables() {
 	dbConn := getConnection()
-	defer dbConn.DB.Close()
+	defer dbConn.DB.Close(context.Background())
 
-	query := "CREATE TABLE IF NOT EXISTS users_data (id SERIAL PRIMARY KEY, username VARCHAR(64) NOT NULL, password VARCHAR(255) NOT NULL, unique_key SMALLINT DEFAULT 0)"
-	_, err := dbConn.DB.Query(query)
+	query := "CREATE SCHEMA IF NOT EXISTS matcha"
+	res, err := dbConn.DB.Query(context.Background(), query)
+	res.Close()
 	if err != nil {
-		log.Fatal(" InsertUserData error. Err: " + err.Error())
+		log.Println(" InitTables error. Err: " + err.Error())
 	}
+
+	query = "CREATE TABLE IF NOT EXISTS matcha.users_data (id SERIAL PRIMARY KEY, username VARCHAR(64) NOT NULL, password VARCHAR(255) NOT NULL, unique_key VARCHAR(255) NOT NULL, acc_state SMALLINT DEFAULT 0)"
+	res, err = dbConn.DB.Query(context.Background(), query)
+	res.Close()
+	if err != nil {
+		log.Println(" InitTables error. Err: " + err.Error())
+	}
+	fmt.Println("Tables initialized")
 }
 
 func InsertUserData(userName, password, uniqueKey string) {
 	dbConn := getConnection()
-	defer dbConn.DB.Close()
+	defer dbConn.DB.Close(context.Background())
 
-	query := "INSERT INTO users_data(username, password, unique_key) VALUES(?, ?, ?)"
-	_, err := dbConn.DB.Query(query, userName, password, uniqueKey)
+	query := "INSERT INTO matcha.users_data(username, password, unique_key) VALUES($1, $2, $3)"
+	res, err := dbConn.DB.Query(context.Background(), query, userName, password, uniqueKey)
+	res.Close()
 	if err != nil {
-		log.Fatal(" InsertUserData error. Err: " + err.Error())
+		log.Println(" InsertUserData error. Err: " + err.Error())
 	}
 }
 
@@ -38,10 +51,10 @@ func AuthUser(email, password string) bool {
 	var databasePassword string
 
 	dbConn := getConnection()
-	defer dbConn.DB.Close()
+	defer dbConn.DB.Close(context.Background())
 
-	query := "SELECT FROM users_data (password) WHERE email=?"
-	resultRow := dbConn.DB.QueryRow(query, email)
+	query := "SELECT FROM matcha.users_data (password) WHERE email=$1"
+	resultRow := dbConn.DB.QueryRow(context.Background(), query, email)
 	resultRow.Scan(&databasePassword)
 	err := bcrypt.CompareHashAndPassword([]byte(databasePassword), []byte(password))
 	if err != nil {
@@ -50,11 +63,11 @@ func AuthUser(email, password string) bool {
 	return true
 }
 
-func getConnection() *DBHandler{
+func getConnection() *DBHandler {
 	dsn := getDSN()
-	db, err := sql.Open("postgres", dsn)
+	db, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
-		log.Fatal("Database is down. Err: " + err.Error())
+		log.Println("Database is down. Err: " + err.Error())
 	}
 	connection := &DBHandler{db}
 	return connection
@@ -67,7 +80,6 @@ func getDSN() string {
 	host, _ := os.LookupEnv("POSTGRES_HOST")
 	db, _ := os.LookupEnv("POSTGRES_DB")
 
-	dsn := "postgres://" + user + ":" + password + "@" + host + ":" + port + "/" + db + "?sslmode=verify-full"
-	println("DSN: ", dsn)
+	dsn := "postgres://" + user + ":" + password + "@" + host + ":" + port + "/" + db + "?sslmode=disable"
 	return dsn
 }

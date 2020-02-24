@@ -8,3 +8,4 @@ RUN go mod vendor
 RUN go build -o /application /go/src/application
 
 CMD ["/application"]
+EXPOSE 8080
