@@ -20,15 +20,13 @@ func InitTables() {
 	defer dbConn.DB.Close(context.Background())
 
 	query := "CREATE SCHEMA IF NOT EXISTS matcha"
-	res, err := dbConn.DB.Query(context.Background(), query)
-	res.Close()
+	_, err := dbConn.DB.Exec(context.Background(), query)
 	if err != nil {
 		log.Println(" InitTables error. Err: " + err.Error())
 	}
 
 	query = "CREATE TABLE IF NOT EXISTS matcha.users_data (id SERIAL PRIMARY KEY, username VARCHAR(64) NOT NULL, password VARCHAR(255) NOT NULL, unique_key VARCHAR(255) NOT NULL, acc_state SMALLINT DEFAULT 0)"
-	res, err = dbConn.DB.Query(context.Background(), query)
-	res.Close()
+	_, err = dbConn.DB.Exec(context.Background(), query)
 	if err != nil {
 		log.Println(" InitTables error. Err: " + err.Error())
 	}
@@ -40,8 +38,7 @@ func InsertUserData(userName, password, uniqueKey string) {
 	defer dbConn.DB.Close(context.Background())
 
 	query := "INSERT INTO matcha.users_data(username, password, unique_key) VALUES($1, $2, $3)"
-	res, err := dbConn.DB.Query(context.Background(), query, userName, password, uniqueKey)
-	res.Close()
+	_, err := dbConn.DB.Exec(context.Background(), query, userName, password, uniqueKey)
 	if err != nil {
 		log.Println(" InsertUserData error. Err: " + err.Error())
 	}
@@ -65,7 +62,11 @@ func AuthUser(email, password string) bool {
 
 func getConnection() *DBHandler {
 	dsn := getDSN()
-	db, err := pgx.Connect(context.Background(), dsn)
+	config, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		log.Println("Config parse error. Err: " + err.Error())
+	}
+	db, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
 		log.Println("Database is down. Err: " + err.Error())
 	}
