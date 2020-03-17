@@ -1,46 +1,55 @@
-package responce
+package api
 
 import (
 	"Matcha/postgres"
 	"Matcha/utils"
+	"encoding/json"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/smtp"
-	"strings"
 	"time"
 )
+
+type UserSignupData struct {
+	Username	string	`json:"username"`
+	Email		string	`json:"email"`
+	Password	string	`json:"password"`
+}
 
 func SignupPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./static/signup/")
 }
 
 func Signup(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("passwd1")
-	passwordConfirm := r.FormValue("passwd2")
-	if strings.Compare(password, passwordConfirm) != 0 {
-		w.Write([]byte("User: " + username + "  Password: " + password))
-		w.WriteHeader(http.StatusAccepted)
-		return
-	}
-
-	uniqueKey := utils.GetMD5(time.Now().String() + username + password)
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	//username := r.FormValue("username")
+	//email := r.FormValue("email")
+	//password := r.FormValue("passwd1")
+	//passwordConfirm := r.FormValue("passwd2")
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		log.Fatal(err.Error())
+	}
+	userData := new(UserSignupData)
+	err = json.Unmarshal(data, &userData)
+
+	uniqueKey := utils.GetMD5(time.Now().String() + userData.Username)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userData.Password), bcrypt.DefaultCost)
+	if err != nil {
+		w.Write([]byte("Backend error: " + err.Error()))
 		log.Fatal(" InsertUserData error. Err: " + err.Error())
 	}
-	queryResult := postgres.InsertUserData(username, email, string(hashedPassword), uniqueKey)
+	queryResult := postgres.InsertUserData(userData.Username, userData.Email, string(hashedPassword), uniqueKey)
 	if queryResult == false {
-		fmt.Println("Account " + username + " already exists")
+		fmt.Println("Account " + userData.Username + " already exists")
 		w.Write([]byte("Already exists"))
 		w.WriteHeader(http.StatusAccepted)
 		return
 	} else {
-		fmt.Println("Account " + username + " created")
-		sendVerifEmail(email, uniqueKey)
+		fmt.Println("Account " + userData.Username + " created")
+		sendVerifEmail(userData.Email, uniqueKey)
 		w.Write([]byte("Okay"))
 		w.WriteHeader(http.StatusAccepted)
 		return

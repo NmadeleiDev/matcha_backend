@@ -21,6 +21,8 @@ github.com/jackc/pgx/v4/internal/sanitize
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
+# github.com/rs/cors v1.7.0
+github.com/rs/cors
 # golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
