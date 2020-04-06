@@ -13,23 +13,24 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
+      BACKEND_PORT: ${BACKEND_PORT}
     ports:
-      - 2222:2222
+      - ${BACKEND_PORT}:${BACKEND_PORT}
     networks:
       - docker_net
       - postgres_net
 #    depends_on:
 #      - postgres
 
-  nginx_server:
-    build:
-      context: ./nginx
-    ports:
-      - 8080:80
-    links:
-      - backend
-    networks:
-      - docker_net
+#  nginx_server:
+#    build:
+#      context: ./nginx
+#    ports:
+#      - 8080:80
+#    links:
+#      - backend
+#    networks:
+#      - docker_net
 
 #  postgres:
 #    image: postgres:9.6.17
