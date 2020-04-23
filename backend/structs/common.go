@@ -20,7 +20,3 @@ type LoginData struct {
 	Password	string		`json:"password"`
 }
 
-type ResponseJson struct {
-	Status		bool		`json:"status"`
-	Data		interface{}	`json:"data"`
-}
