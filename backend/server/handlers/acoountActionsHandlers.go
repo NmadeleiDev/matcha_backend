@@ -1,16 +1,17 @@
 package handlers
 
 import (
+	"backend/db/mongodb"
 	"backend/db/postgres"
-	"backend/server/utils"
 	"backend/structs"
+	"backend/utils"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
 
-func	SignUpHandler(w http.ResponseWriter, r *http.Request) {
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" {
 		requestData, err := ioutil.ReadAll(r.Body)
@@ -27,17 +28,21 @@ func	SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !postgres.CreateUser(*userData) {
-			utils.SendFailResponse(w)
+			utils.SendFailResponse(w, "failed to create user")
 			return
 		}
 
-		//utils.RefreshRequestSessionKeyCookie(w, *userData)
+		if !mongodb.CreateUser(*userData) {
+			utils.SendFailResponse(w, "failed to create user")
+			return
+		}
+
+		utils.RefreshRequestSessionKeyCookie(w, *userData)
 		utils.SendSuccessResponse(w)
 	}
 }
 
-func	SignInHandler(w http.ResponseWriter, r *http.Request) {
-
+func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		requestData, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -52,17 +57,28 @@ func	SignInHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if postgres.LoginUser(*loginData) {
-			userData, err := postgres.GetFullUserData(*loginData)
+			userData, err := mongodb.GetUserData(*loginData)
 			if err != nil {
 				log.Error("Failed to get user data")
-				utils.SendFailResponse(w)
+				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
 				utils.SendDataResponse(w, userData)
+				utils.RefreshRequestSessionKeyCookie(w, userData)
+				return
 			}
 		} else {
-			utils.SendFailResponse(w)
+			utils.SendFailResponse(w,"incorrect user data")
 		}
+	}
+}
 
-		//utils.RefreshRequestSessionKeyCookie(w, *userData)
+func SignOutHandler(w http.ResponseWriter, r *http.Request) {
+
+	session := utils.GetCookieValue(r,"session_id")
+	ok := postgres.UpdateSessionKey(session, "")
+	if ok {
+		utils.SendSuccessResponse(w)
+	} else {
+		utils.SendFailResponse(w, "incorrect session")
 	}
 }
