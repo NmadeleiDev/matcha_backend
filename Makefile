@@ -21,3 +21,6 @@ up: ## build & start the project (docker-compose)
 
 down: ## stop the project (docker-compose)
 	docker-compose down
+
+node-up:
+	cd ./media_server && node index.js
