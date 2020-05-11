@@ -21,7 +21,8 @@
 	"max_dist": 100,
 	"look_for": "male",
 	"min_age": 17,
-	"max_age": 38
+	"max_age": 38,
+	"images":["5eb23b466bfad500075db570","5eb23b596bfad500075db571","5eb23e4943e09d00075b7a22"]}
 }
 
 2. POST /api/v1/signin

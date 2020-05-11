@@ -143,7 +143,7 @@ WHERE session_key=$2`
 	return true
 }
 
-func IssueUserSessionKey(user structs.UserData) (string, error) {
+func IssueUserSessionKey(user structs.LoginData) (string, error) {
 	var truePassword string
 	var id int
 

@@ -13,7 +13,7 @@ const (
 	oneDayInSeconds = 86400
 )
 
-func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user structs.UserData) bool {
+func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user structs.LoginData) bool {
 	var packet []byte
 
 	sessionKey, err := postgres.IssueUserSessionKey(user)

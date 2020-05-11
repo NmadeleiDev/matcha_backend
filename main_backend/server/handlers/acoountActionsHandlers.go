@@ -37,7 +37,8 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		utils.RefreshRequestSessionKeyCookie(w, *userData)
+		loginData := structs.LoginData{Email: userData.Email, Password: userData.Password}
+		utils.RefreshRequestSessionKeyCookie(w, loginData)
 		utils.SendSuccessResponse(w)
 	}
 }
@@ -64,8 +65,8 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
+				utils.RefreshRequestSessionKeyCookie(w, *loginData)
 				utils.SendDataResponse(w, userData)
-				utils.RefreshRequestSessionKeyCookie(w, userData)
 				return
 			}
 		} else {
