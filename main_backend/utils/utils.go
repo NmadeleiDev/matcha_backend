@@ -14,8 +14,6 @@ const (
 )
 
 func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user structs.LoginData) bool {
-	var packet []byte
-
 	sessionKey, err := postgres.IssueUserSessionKey(user)
 
 	if err != nil {
@@ -24,14 +22,6 @@ func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user structs.LoginDat
 	}
 
 	SetCookie(w, "session_id", sessionKey)
-
-	response := &structs.ResponseJson{Status: true, Data: nil}
-	if packet, err = json.Marshal(response); err != nil {
-		log.Error("Error marshalling response: ", err)
-	}
-	if _, err = w.Write(packet); err != nil {
-		log.Error("Error sending response: ", err)
-	}
 	return true
 }
 
