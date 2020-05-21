@@ -33,6 +33,7 @@ async function closeConnection() {
 
 async function insertImageData(data) {
     let result;
+    let update;
 
     const mediaCollection = client.db("media").collection("images");
     try {
@@ -42,8 +43,14 @@ async function insertImageData(data) {
         return null;
     }
     const userCollection = client.db("matcha").collection("users");
+
+    if (data.isAvatar === true || data.isAvatar === 'true')
+        update = {$set: {avatar: result.insertedId.toString()}}
+    else
+        update = {$push: {images: result.insertedId.toString()}};
+
     try {
-        await userCollection.updateOne({email: data.email}, {$push: {images: result.insertedId.toString()}})
+        await userCollection.updateOne({id: data.id}, update)
     } catch (e) {
         console.log("error inserting image data: ",e)
         return null;

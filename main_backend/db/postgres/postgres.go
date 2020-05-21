@@ -35,6 +35,10 @@ func MakeConnection() {
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}
+	err = conn.Ping()
+	if err != nil {
+		log.Fatal("Error pinging postgres: ", err)
+	}
 	connection = conn
 }
 
@@ -53,7 +57,7 @@ func InitTables() {
 
 	query = `create table if not exists ` + userDataTable + `
 (
-    id            serial       not null
+    id            varchar(256)       not null
         constraint users_pk
             primary key,
     password      varchar(255) not null,
@@ -65,19 +69,21 @@ func InitTables() {
 	}
 }
 
-func CreateUser(userData structs.UserData) bool {
+func CreateUser(userData *structs.UserData) bool {
 
 	query := `
-INSERT INTO ` + userDataTable + `(email, password)
-VALUES ($1, $2)`
+INSERT INTO ` + userDataTable + `(email, password, id)
+VALUES ($1, $2, $3)`
 
+	rawId := userData.Email + time.Now().String() + strconv.Itoa(rand.Int())
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.Password), hashCost)
 	if err != nil {
 		log.Error("Error hashing password", err)
 		return false
 	}
 
-	_, err = connection.Exec(query, userData.Email, passwordHash)
+	userData.Id = CalculateSha256(rawId)
+	_, err = connection.Exec(query, userData.Email, passwordHash, userData.Id)
 	if err != nil {
 		log.Error("Error creating user: ", err)
 		return false
@@ -85,15 +91,15 @@ VALUES ($1, $2)`
 	return true
 }
 
-func LoginUser(loginData structs.LoginData) bool {
+func LoginUser(loginData *structs.LoginData) bool {
 	var truePassword string
 
 	query := `
-SELECT password FROM ` + userDataTable + ` 
+SELECT id, password FROM ` + userDataTable + ` 
 WHERE email = $1`
 
 	row := connection.QueryRow(query, loginData.Email)
-	if err := row.Scan(&truePassword); err != nil {
+	if err := row.Scan(&loginData.Id, &truePassword); err != nil {
 		log.Error("Error getting user info: ", err)
 		return false
 	}
@@ -104,7 +110,7 @@ WHERE email = $1`
 	return true
 }
 
-func SetSessionKeyById(sessionKey string, id int) bool {
+func SetSessionKeyById(sessionKey string, id string) bool {
 	query := `
 UPDATE ` + userDataTable + ` 
 SET session_key=$1
@@ -130,6 +136,17 @@ WHERE session_key=$1`
 	return user, err
 }
 
+func GetUserIdBySession(sessionKey string) (user structs.LoginData, err error) {
+	query := `
+SELECT id
+FROM ` + userDataTable + ` 
+WHERE session_key=$1`
+
+	row := connection.QueryRow(query, sessionKey)
+	err = row.Scan(&user.Id)
+	return user, err
+}
+
 func UpdateSessionKey(old, new string) bool {
 	query := `
 UPDATE ` + userDataTable + ` 
@@ -145,14 +162,13 @@ WHERE session_key=$2`
 
 func IssueUserSessionKey(user structs.LoginData) (string, error) {
 	var truePassword string
-	var id int
 
 	query := `
-SELECT id, password FROM ` + userDataTable + ` 
-WHERE email = $1`
+SELECT password FROM ` + userDataTable + ` 
+WHERE id = $1`
 
-	row := connection.QueryRow(query, user.Email)
-	if err := row.Scan(&id, &truePassword); err != nil {
+	row := connection.QueryRow(query, user.Id)
+	if err := row.Scan(&truePassword); err != nil {
 		log.Error("Error getting user info: ", err)
 		return "", err
 	}
@@ -163,7 +179,7 @@ WHERE email = $1`
 	sessionKeyBytes := md5.Sum([]byte(time.Now().String() + user.Email + strconv.Itoa(rand.Int())))
 	sessionKey := fmt.Sprintf("%x", sessionKeyBytes)
 
-	if SetSessionKeyById(sessionKey, id) {
+	if SetSessionKeyById(sessionKey, user.Id) {
 		return sessionKey, nil
 	} else {
 		return "", errors.New("error updating session key")

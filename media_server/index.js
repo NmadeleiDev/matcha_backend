@@ -27,8 +27,15 @@ app.post("/upload", upload.single('image'), function (req, res, next) {
     console.log(req.file);
     const fileData = {
         filename: req.file.filename,
-        email: req.body.email,
+        id: req.body.id,
+        isAvatar: (req.body.isAvatar === undefined || req.body.isAvatar === null) ? false : req.body.isAvatar,
     }
+
+    if (fileData.id === undefined || fileData.id === null) {
+        res.end(JSON.stringify({status: false, data: "Incorrect user id"}));
+        return
+    }
+
     mongoFuncs.insertImageData(fileData).then(id => {
         if (id === null) {
             console.log("Error saving file data");

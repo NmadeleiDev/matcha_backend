@@ -1,6 +1,5 @@
 package utils
 
-
 import (
 	"backend/db/postgres"
 	"backend/structs"
@@ -84,4 +83,3 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 		log.Error("Error sending response: ", err)
 	}
 }
-

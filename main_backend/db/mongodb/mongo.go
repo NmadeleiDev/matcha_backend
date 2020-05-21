@@ -68,7 +68,7 @@ func GetUserData(user structs.LoginData) (structs.UserData, error) {
 	userCollection := database.Collection(userDataCollection)
 
 	log.Info("User: ", user)
-	filter := bson.M{"email": user.Email}
+	filter := bson.M{"id": user.Id}
 	container := structs.UserData{}
 	err := userCollection.FindOne(context.Background(),filter).Decode(&container)
 	if  err != nil {

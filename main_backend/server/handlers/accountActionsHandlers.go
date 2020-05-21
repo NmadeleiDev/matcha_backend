@@ -27,7 +27,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !postgres.CreateUser(*userData) {
+		if !postgres.CreateUser(userData) {
 			utils.SendFailResponse(w, "failed to create user")
 			return
 		}
@@ -37,9 +37,11 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData := structs.LoginData{Email: userData.Email, Password: userData.Password}
-		utils.RefreshRequestSessionKeyCookie(w, loginData)
-		utils.SendSuccessResponse(w)
+		loginData := structs.LoginData{Email: userData.Email, Password: userData.Password, Id: userData.Id}
+		if utils.RefreshRequestSessionKeyCookie(w, loginData) {
+			userData.Password = ""
+			utils.SendDataResponse(w, userData)
+		}
 	}
 }
 
@@ -59,9 +61,10 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if postgres.LoginUser(*loginData) {
+		if postgres.LoginUser(loginData) {
 			userData, err := mongodb.GetUserData(*loginData)
 			if err != nil {
+				userData.Id = loginData.Id
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
