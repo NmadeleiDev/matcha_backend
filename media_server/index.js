@@ -18,7 +18,7 @@ const Storage = multer.diskStorage({
         callback(null, STORAGE_PATH);
     },
     filename: function(req, file, callback) {
-        callback(null, Date.now() + "_" + Math.floor(Math.random() * 1000) + '_' + file.originalname.replace(/ /g, ''));
+        callback(null, Date.now() + "_" + Math.floor(Math.random() * 1000) + '_' + file.fieldname.replace(/ /g, ''));
     }
 });
 
