@@ -26,6 +26,11 @@ const upload = multer({ dest: 'uploads/', storage: Storage })
 
 app.post("/upload", upload.single('image'), function (req, res, next) {
     // req.file is the `avatar` file
+    if (req.file === undefined) {
+        console.log("File is undefined");
+        res.end("File is empty");
+        return;
+    }
     console.log(req.file);
     const fileData = {
         filename: req.file.filename,
