@@ -24,7 +24,7 @@ const Storage = multer.diskStorage({
 
 const upload = multer({ dest: 'uploads/', storage: Storage })
 
-app.post("/upload", upload.single('image'), function (req, res, next) {
+app.post("/upload", upload.single('user_image'), function (req, res, next) {
     // req.file is the `avatar` file
     if (req.file === undefined) {
         console.log("File is undefined");
