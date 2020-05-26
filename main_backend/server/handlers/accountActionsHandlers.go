@@ -78,6 +78,42 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		requestData, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Error("Can't read request body for login: ", err)
+			return
+		}
+
+		userData := &structs.UserData{}
+		err = json.Unmarshal(requestData, userData)
+		if err != nil {
+			log.Error("Can't parse request body for login: ", err)
+			return
+		}
+
+		loginData, err := postgres.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		if err != nil {
+			log.Error("Can't get user is: ", err)
+			return
+		}
+
+		if userData.Id != loginData.Id {
+			log.Warn("request body id does not match session_id id")
+			utils.SendFailResponse(w, "id is incorrect")
+			postgres.SetSessionKeyById("", loginData.Id)
+			return
+		}
+
+		if !mongodb.UpdateUser(*userData) {
+			utils.SendFailResponse(w, "failed to update user")
+			return
+		}
+		utils.SendSuccessResponse(w)
+	}
+}
+
 func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodDelete {

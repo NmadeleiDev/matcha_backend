@@ -14,6 +14,7 @@ func StartServer(port string) {
 	router.HandleFunc("/signup", handlers.SignUpHandler)
 	router.HandleFunc("/signin", handlers.SignInHandler)
 	router.HandleFunc("/signout", handlers.SignOutHandler)
+	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 
 	router.HandleFunc("/strangers", handlers.GetStrangersHandler)
 

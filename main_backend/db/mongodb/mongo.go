@@ -81,6 +81,34 @@ func GetUserData(user structs.LoginData) (structs.UserData, error) {
 	return container, nil
 }
 
+func UpdateUser(user structs.UserData) bool {
+	database := client.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.M{"id": user.Id}
+	update := bson.D{{"$set", bson.D{{"username", user.Username}}},
+		{"$set", bson.D{{"age", user.Age}}},
+		{"$set", bson.D{{"gender", user.Gender}}},
+		{"$set", bson.D{{"phone", user.Phone}}},
+		{"$set", bson.D{{"country", user.Country}}},
+		{"$set", bson.D{{"city", user.City}}},
+		{"$set", bson.D{{"max_dist", user.MaxDist}}},
+		{"$set", bson.D{{"look_for", user.LookFor}}},
+		{"$set", bson.D{{"min_age", user.MinAge}}},
+		{"$set", bson.D{{"max_age", user.MaxAge}}}}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if  err != nil {
+		log.Error("Error updating user document: ", err)
+		return false
+	}
+	if res.MatchedCount != 1 {
+		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		return false
+	}
+	return true
+}
+
 func GetFittingUsers(user structs.UserData) (results []structs.UserData, ok bool) {
 	database := client.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
