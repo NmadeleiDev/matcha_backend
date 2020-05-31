@@ -53,6 +53,9 @@ func CreateUser(user structs.UserData) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	user.Password = ""
+	user.LookedBy = []string{}
+	user.LikedBy = []string{}
+	user.Matches = []string{}
 
 	_, err := userCollection.InsertOne(context.TODO(), user)
 	if err != nil {
@@ -136,4 +139,58 @@ func GetFittingUsers(user structs.UserData) (results []structs.UserData, ok bool
 	}
 
 	return results, true
+}
+
+func SaveLooked(lookedId, lookerId string) bool {
+	database := client.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.D{{"id", lookedId}}
+	update := bson.D{{"$push", bson.D{{"looked_by", lookerId}}}}
+	opts := options.Update()
+
+	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		log.Errorf("Error pushing looked_by: %v", err)
+		return false
+	}
+	return true
+}
+
+func SaveLiked(likedId, likerId string) bool {
+	database := client.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.D{{"id", likedId}}
+	update := bson.D{{"$push", bson.D{{"liked_by", likerId}}}}
+	opts := options.Update()
+
+	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		log.Errorf("Error pushing liked_by: %v", err)
+		return false
+	}
+	return true
+}
+
+func SaveMatch(matched1Id, matched2Id string) bool {
+
+	return makeMatchForAccount(matched1Id, matched2Id) && makeMatchForAccount(matched2Id, matched1Id)
+}
+
+func makeMatchForAccount(userId, matchedId string) bool {
+	user := structs.UserData{}
+	database := client.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.D{{"id", userId}}
+	update := bson.D{{"$push", bson.D{{"matched", matchedId}}}, {"$pull", bson.D{{"liked_by", matchedId}}}}
+	opts := options.FindOneAndUpdate()
+
+	err := userCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&user)
+	if err != nil {
+		log.Errorf("Error pushing liked_by: %v", err)
+		return false
+	}
+	return true
 }

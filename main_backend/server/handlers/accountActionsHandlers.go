@@ -6,6 +6,7 @@ import (
 	"backend/structs"
 	"backend/utils"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -123,6 +124,30 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w, "incorrect session")
+		}
+	}
+}
+
+func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		id := mux.Vars(r)["id"]
+		session := utils.GetCookieValue(r,"session_id")
+		_, err := postgres.GetUserIdBySession(session)
+		if err != nil {
+			utils.SendFailResponse(w, "incorrect session id")
+			return
+		}
+		userData, err := mongodb.GetUserData(structs.LoginData{Id: id})
+		userData.LikedBy = []string{}
+		userData.LookedBy = []string{}
+		userData.Matches = []string{}
+		if err != nil {
+			userData.Id = id
+			log.Error("Failed to get user data")
+			utils.SendFailResponse(w,"Failed to get user data")
+		} else {
+			utils.SendDataResponse(w, userData)
+			return
 		}
 	}
 }

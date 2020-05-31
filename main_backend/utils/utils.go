@@ -83,3 +83,12 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 		log.Error("Error sending response: ", err)
 	}
 }
+
+func DoesArrayContain(haystack []string, needle string) bool {
+	for _, item := range haystack {
+		if item == needle {
+			return true
+		}
+	}
+	return false
+}

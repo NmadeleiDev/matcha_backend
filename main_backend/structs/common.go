@@ -16,6 +16,9 @@ type UserData struct {
 	MaxAge   int    `json:"max_age" bson:"max_age"`
 	Images	[]string `json:"images" bson:"images,omitempty"`
 	Avatar	string		`json:"avatar,omitempty" bson:"avatar,omitempty"`
+	LikedBy	[]string	`json:"liked_by" bson:"liked_by"`
+	LookedBy []string	`json:"looked_by" bson:"looked_by"`
+	Matches	[]string	`json:"matches" bson:"matches"`
 }
 
 type LoginData struct {

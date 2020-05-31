@@ -16,7 +16,13 @@ func StartServer(port string) {
 	router.HandleFunc("/signout", handlers.SignOutHandler)
 	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 
+	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler)
+
 	router.HandleFunc("/strangers", handlers.GetStrangersHandler)
+
+	router.HandleFunc("/look", handlers.SaveAccountLookUpHandler)
+	router.HandleFunc("/like", handlers.SaveLikeActionHandler)
+	router.HandleFunc("/match", handlers.SaveMatchHandler)
 
 	log.Info("Listening ", port)
 	if err := http.ListenAndServe(":"+port, router); err != nil {
