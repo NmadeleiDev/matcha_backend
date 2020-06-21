@@ -138,16 +138,28 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		userData, err := mongodb.GetUserData(structs.LoginData{Id: id})
-		userData.LikedBy = []string{}
-		userData.LookedBy = []string{}
-		userData.Matches = []string{}
 		if err != nil {
 			userData.Id = id
 			log.Error("Failed to get user data")
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
+			userData.LikedBy = []string{}
+			userData.LookedBy = []string{}
+			userData.Matches = []string{}
 			utils.SendDataResponse(w, userData)
 			return
 		}
+	}
+}
+
+func GetUserOwnImagesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		session := utils.GetCookieValue(r, "session_id")
+		data, err := postgres.GetUserIdBySession(session)
+		if err != nil {
+			utils.SendFailResponse(w, "incorrect session id")
+			return
+		}
+		utils.SendDataResponse(w, mongodb.GetUserImages(data.Id))
 	}
 }

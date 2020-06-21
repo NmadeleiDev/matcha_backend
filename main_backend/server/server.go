@@ -16,7 +16,9 @@ func StartServer(port string) {
 	router.HandleFunc("/signout", handlers.SignOutHandler)
 	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 
-	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler)
+	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
+
+	router.HandleFunc("/media", handlers.GetUserOwnImagesHandler) // получить свои фотки
 
 	router.HandleFunc("/strangers", handlers.GetStrangersHandler)
 

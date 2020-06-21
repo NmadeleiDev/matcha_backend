@@ -174,7 +174,6 @@ func SaveLiked(likedId, likerId string) bool {
 }
 
 func SaveMatch(matched1Id, matched2Id string) bool {
-
 	return makeMatchForAccount(matched1Id, matched2Id) && makeMatchForAccount(matched2Id, matched1Id)
 }
 
@@ -193,4 +192,24 @@ func makeMatchForAccount(userId, matchedId string) bool {
 		return false
 	}
 	return true
+}
+
+func GetUserImages(id string) []string {
+	database := client.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	container := struct {
+		Images		[]string	`bson:"images"`
+	}{}
+
+	filter := bson.M{"id": id}
+	err := userCollection.FindOne(context.Background(),filter).Decode(&container)
+	if  err != nil {
+		log.Error("Error finding user document: ", err)
+		return container.Images
+	} else {
+		log.Info("Got user images: ", container)
+	}
+
+	return container.Images
 }
