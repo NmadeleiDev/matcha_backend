@@ -29,12 +29,12 @@ func (m *ManagerStruct) MakeConnection() {
 		log.Error("Env is empty", user, password, addr)
 	}
 
-	connStr := fmt.Sprintf("userDataStorage://%v:%v@%v", user, password, addr)
+	connStr := fmt.Sprintf("mongodb://%v:%v@%v", user, password, addr)
 	log.Info("Connecting to mongo: ", connStr)
 	opts := options.Client().ApplyURI(connStr)
 	m.Conn, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		log.Fatal("Error getting m.Conn mongo: ", err)
+		log.Fatal("Error getting mongo client: ", err)
 	}
 	if err != nil {
 		log.Fatal("Error connecting to mongo: ", err)
