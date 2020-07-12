@@ -23,6 +23,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
+	log.Info("Managing websocket")
 	id, ok := utils.IdentifyUserBySession(r)
 	if !ok {
 		utils.SendFailResponse(w, "Unauthorized request")
