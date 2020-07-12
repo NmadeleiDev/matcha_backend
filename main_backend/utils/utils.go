@@ -5,7 +5,6 @@ import (
 	"backend/types"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
-	types2 "go/types"
 	"net/http"
 	"reflect"
 )
@@ -15,7 +14,7 @@ const (
 )
 
 func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user types.LoginData) bool {
-	sessionKey, err := structuredDataStorage.IssueUserSessionKey(user)
+	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)
 
 	if err != nil {
 		SendFailResponse(w, "incorrect user data")
