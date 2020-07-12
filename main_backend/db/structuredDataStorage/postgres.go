@@ -33,21 +33,21 @@ func (m *ManagerStruct) MakeConnection() {
 	port := os.Getenv("POSTGRES_PORT")
 	db := os.Getenv("POSTGRES_DB")
 
-	connStr := fmt.Sprintf("structuredDataStorage://%v:%v@%v:%v/%v?sslmode=disable", user, password, host, port, db)
+	connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", user, password, host, port, db)
 	conn, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}
 	err = conn.Ping()
 	if err != nil {
-		log.Fatal("Error pinging structuredDataStorage: ", err)
+		log.Fatal("Error pinging postgres: ", err)
 	}
 	m.Conn = conn
 }
 
 func (m *ManagerStruct) CloseConnection() {
 	if err := m.Conn.Close(); err != nil {
-		log.Error("Error closing structuredDataStorage m.Conn: ", err)
+		log.Error("Error closing postgres: ", err)
 	}
 }
 
