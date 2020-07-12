@@ -28,7 +28,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
 		utils.SendFailResponse(w, "Unauthorized request")
 		return
 	}
-	
+
 	connection, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Error("Error establishing ws connection: ", err)

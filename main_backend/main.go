@@ -10,11 +10,11 @@ import (
 func main() {
 	port := os.Getenv("BACKEND_PORT")
 
-	defer structuredDataStorage.Manager.CloseConnection()
-	defer userDataStorage.Manager.CloseConnection()
-
 	structuredDataStorage.Init()
 	userDataStorage.Init()
 
+	defer structuredDataStorage.Manager.CloseConnection()
+	defer userDataStorage.Manager.CloseConnection()
+	
 	server.StartServer(port)
 }
