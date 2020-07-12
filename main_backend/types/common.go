@@ -19,6 +19,12 @@ type UserData struct {
 	LikedBy	[]string	`json:"liked_by" bson:"liked_by"`
 	LookedBy []string	`json:"looked_by" bson:"looked_by"`
 	Matches	[]string	`json:"matches" bson:"matches"`
+	GeoPosition Coordinates	`json:"position" bson:"position"`
+}
+
+type Coordinates struct {
+	Lat			float64		`json:"lat"`
+	Lon			float64		`json:"lon"`
 }
 
 type LoginData struct {

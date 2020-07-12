@@ -101,7 +101,8 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 		{"$set", bson.D{{"max_dist", user.MaxDist}}},
 		{"$set", bson.D{{"look_for", user.LookFor}}},
 		{"$set", bson.D{{"min_age", user.MinAge}}},
-		{"$set", bson.D{{"max_age", user.MaxAge}}}}
+		{"$set", bson.D{{"max_age", user.MaxAge}}},
+		{"$set", bson.D{{"position", user.GeoPosition}}}}
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
 	if  err != nil {
