@@ -34,7 +34,7 @@ func (m *ManagerStruct) MakeConnection() {
 	db := os.Getenv("POSTGRES_DB")
 
 	connStr := fmt.Sprintf("structuredDataStorage://%v:%v@%v:%v/%v?sslmode=disable", user, password, host, port, db)
-	conn, err := sql.Open("structuredDataStorage", connStr)
+	conn, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}

@@ -15,6 +15,6 @@ func main() {
 
 	defer structuredDataStorage.Manager.CloseConnection()
 	defer userDataStorage.Manager.CloseConnection()
-	
+
 	server.StartServer(port)
 }
