@@ -18,7 +18,7 @@ services:
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     depends_on:
-      - postgres
+      #      - postgres
       - mongodb
     networks:
       - docker_net
@@ -45,10 +45,11 @@ services:
 
   mongodb:
     image: mongo:4.2.3
-    hostname: userDataStorage
-    container_name: userDataStorage
+    hostname: mongodb-matcha
+    container_name: mongodb-matcha
+    command: mongod --port ${MONGO_PORT}
     ports:
-      - ${MONGO_PORT}:27017
+      - ${MONGO_PORT}:${MONGO_PORT}
     volumes:
       - ./data/mongo:/data/db
     environment:
@@ -76,7 +77,7 @@ services:
     volumes:
       - ./data/pgsql:/var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT}:5432
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
