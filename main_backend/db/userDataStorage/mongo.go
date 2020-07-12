@@ -1,7 +1,7 @@
-package mongodb
+package userDataStorage
 
 import (
-	"backend/structs"
+	"backend/types"
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -14,9 +14,12 @@ import (
 
 const userDataCollection = "users"
 const mainDBName = "matcha"
-var client *mongo.Client
 
-func MakeConnection() {
+type ManagerStruct struct {
+	Conn *mongo.Client
+}
+
+func (m *ManagerStruct) MakeConnection() {
 	var err error
 	user := os.Getenv("MONGO_USER")
 	password := os.Getenv("MONGO_PASSWORD")
@@ -26,30 +29,30 @@ func MakeConnection() {
 		log.Error("Env is empty", user, password, addr)
 	}
 
-	connStr := fmt.Sprintf("mongodb://%v:%v@%v", user, password, addr)
+	connStr := fmt.Sprintf("userDataStorage://%v:%v@%v", user, password, addr)
 	log.Info("Connecting to mongo: ", connStr)
 	opts := options.Client().ApplyURI(connStr)
-	client, err = mongo.Connect(context.TODO(), opts)
+	m.Conn, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		log.Fatal("Error getting client mongo: ", err)
+		log.Fatal("Error getting m.Conn mongo: ", err)
 	}
 	if err != nil {
 		log.Fatal("Error connecting to mongo: ", err)
 	}
-	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err = m.Conn.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal("Error pinging: ", err)
 	}
 	log.Info("Connected.")
 }
 
-func CloseConnection() {
-	if err := client.Disconnect(context.TODO()); err != nil {
+func (m *ManagerStruct) CloseConnection() {
+	if err := m.Conn.Disconnect(context.TODO()); err != nil {
 		log.Error("Error closing mongo: ", err)
 	}
 }
 
-func CreateUser(user structs.UserData) bool {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) CreateUser(user types.UserData) bool {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	user.Password = ""
@@ -65,18 +68,18 @@ func CreateUser(user structs.UserData) bool {
 	return true
 }
 
-func GetUserData(user structs.LoginData) (structs.UserData, error) {
+func (m *ManagerStruct) GetUserData(user types.LoginData) (types.UserData, error) {
 
-	database := client.Database(mainDBName)
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	log.Info("User: ", user)
+	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
-	container := structs.UserData{}
+	container := types.UserData{}
 	err := userCollection.FindOne(context.Background(),filter).Decode(&container)
 	if  err != nil {
 		log.Error("Error finding user document: ", err)
-		return structs.UserData{}, err
+		return types.UserData{}, err
 	} else {
 		log.Info("Got user document: ", container)
 	}
@@ -84,8 +87,8 @@ func GetUserData(user structs.LoginData) (structs.UserData, error) {
 	return container, nil
 }
 
-func UpdateUser(user structs.UserData) bool {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.M{"id": user.Id}
@@ -112,13 +115,13 @@ func UpdateUser(user structs.UserData) bool {
 	return true
 }
 
-func GetFittingUsers(user structs.UserData) (results []structs.UserData, ok bool) {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.UserData, ok bool) {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"gender", user.LookFor}, {"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
 	//log.Info("Filter: ", filter)
-	//log.Info("User: ", user)
+	//log.Info("UserId: ", user)
 	cur, err := userCollection.Find(context.Background(),filter)
 	if  err != nil {
 		log.Error("Error finding user document: ", err)
@@ -127,7 +130,7 @@ func GetFittingUsers(user structs.UserData) (results []structs.UserData, ok bool
 	defer cur.Close(context.Background())
 
 	for cur.Next(context.Background()) {
-		container := structs.UserData{}
+		container := types.UserData{}
 		err := cur.Decode(&container)
 		if err != nil {
 			log.Error("Error decoding user: ", err)
@@ -141,8 +144,8 @@ func GetFittingUsers(user structs.UserData) (results []structs.UserData, ok bool
 	return results, true
 }
 
-func SaveLooked(lookedId, lookerId string) bool {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) SaveLooked(lookedId, lookerId string) bool {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", lookedId}}
@@ -157,8 +160,8 @@ func SaveLooked(lookedId, lookerId string) bool {
 	return true
 }
 
-func SaveLiked(likedId, likerId string) bool {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", likedId}}
@@ -173,13 +176,13 @@ func SaveLiked(likedId, likerId string) bool {
 	return true
 }
 
-func SaveMatch(matched1Id, matched2Id string) bool {
-	return makeMatchForAccount(matched1Id, matched2Id) && makeMatchForAccount(matched2Id, matched1Id)
+func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
+	return m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
 }
 
-func makeMatchForAccount(userId, matchedId string) bool {
-	user := structs.UserData{}
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
+	user := types.UserData{}
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", userId}}
@@ -194,8 +197,8 @@ func makeMatchForAccount(userId, matchedId string) bool {
 	return true
 }
 
-func GetUserImages(id string) []string {
-	database := client.Database(mainDBName)
+func (m *ManagerStruct) GetUserImages(id string) []string {
+	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	container := struct {

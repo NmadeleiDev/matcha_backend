@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"backend/db/mongodb"
-	"backend/db/postgres"
-	"backend/structs"
+	"backend/db/structuredDataStorage"
+	"backend/db/userDataStorage"
+	"backend/types"
 	"backend/utils"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -21,24 +21,24 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userData := &structs.UserData{}
+		userData := &types.UserData{}
 		err = json.Unmarshal(requestData, userData)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			return
 		}
 
-		if !postgres.CreateUser(userData) {
+		if !structuredDataStorage.Manager.CreateUser(userData) {
 			utils.SendFailResponse(w, "failed to create user")
 			return
 		}
 
-		if !mongodb.CreateUser(*userData) {
+		if !userDataStorage.Manager.CreateUser(*userData) {
 			utils.SendFailResponse(w, "failed to create user")
 			return
 		}
 
-		loginData := structs.LoginData{Email: userData.Email, Password: userData.Password, Id: userData.Id}
+		loginData := types.LoginData{Email: userData.Email, Password: userData.Password, Id: userData.Id}
 		if utils.RefreshRequestSessionKeyCookie(w, loginData) {
 			userData.Password = ""
 			utils.SendDataResponse(w, userData)
@@ -55,15 +55,15 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData := &structs.LoginData{}
+		loginData := &types.LoginData{}
 		err = json.Unmarshal(requestData, loginData)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if postgres.LoginUser(loginData) {
-			userData, err := mongodb.GetUserData(*loginData)
+		if structuredDataStorage.Manager.LoginUser(loginData) {
+			userData, err := userDataStorage.Manager.GetUserData(*loginData)
 			if err != nil {
 				userData.Id = loginData.Id
 				log.Error("Failed to get user data")
@@ -87,14 +87,14 @@ func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userData := &structs.UserData{}
+		userData := &types.UserData{}
 		err = json.Unmarshal(requestData, userData)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			return
 		}
 
-		loginData, err := postgres.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Can't get user is: ", err)
 			return
@@ -103,11 +103,11 @@ func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if userData.Id != loginData.Id {
 			log.Warn("request body id does not match session_id id")
 			utils.SendFailResponse(w, "id is incorrect")
-			postgres.SetSessionKeyById("", loginData.Id)
+			structuredDataStorage.Manager.SetSessionKeyById("", loginData.Id)
 			return
 		}
 
-		if !mongodb.UpdateUser(*userData) {
+		if !userDataStorage.Manager.UpdateUser(*userData) {
 			utils.SendFailResponse(w, "failed to update user")
 			return
 		}
@@ -119,7 +119,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodDelete {
 		session := utils.GetCookieValue(r,"session_id")
-		ok := postgres.UpdateSessionKey(session, "")
+		ok := structuredDataStorage.Manager.UpdateSessionKey(session, "")
 		if ok {
 			utils.SendSuccessResponse(w)
 		} else {
@@ -132,12 +132,12 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		id := mux.Vars(r)["id"]
 		session := utils.GetCookieValue(r,"session_id")
-		_, err := postgres.GetUserIdBySession(session)
+		_, err := structuredDataStorage.Manager.GetUserIdBySession(session)
 		if err != nil {
 			utils.SendFailResponse(w, "incorrect session id")
 			return
 		}
-		userData, err := mongodb.GetUserData(structs.LoginData{Id: id})
+		userData, err := userDataStorage.Manager.GetUserData(types.LoginData{Id: id})
 		if err != nil {
 			userData.Id = id
 			log.Error("Failed to get user data")
@@ -155,11 +155,11 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 func GetUserOwnImagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		session := utils.GetCookieValue(r, "session_id")
-		data, err := postgres.GetUserIdBySession(session)
+		data, err := structuredDataStorage.Manager.GetUserIdBySession(session)
 		if err != nil {
 			utils.SendFailResponse(w, "incorrect session id")
 			return
 		}
-		utils.SendDataResponse(w, mongodb.GetUserImages(data.Id))
+		utils.SendDataResponse(w, userDataStorage.Manager.GetUserImages(data.Id))
 	}
 }

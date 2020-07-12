@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"backend/db/mongodb"
-	"backend/db/postgres"
-	"backend/structs"
+	"backend/db/structuredDataStorage"
+	"backend/db/userDataStorage"
+	"backend/types"
 	"backend/utils"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
@@ -14,19 +14,19 @@ import (
 func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		session := utils.GetCookieValue(r, "session_id")
-		user, err := postgres.GetUserIdBySession(session)
+		user, err := structuredDataStorage.Manager.GetUserIdBySession(session)
 		if err != nil {
 			log.Error("Failed to get user data by session")
 			utils.SendFailResponse(w, "incorrect user data")
 			return
 		}
-		userData, err := mongodb.GetUserData(user)
+		userData, err := userDataStorage.Manager.GetUserData(user)
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")
 			return
 		}
-		strangers, ok := mongodb.GetFittingUsers(userData)
+		strangers, ok := userDataStorage.Manager.GetFittingUsers(userData)
 		if ok {
 			utils.SendDataResponse(w, strangers)
 		} else {
@@ -44,21 +44,21 @@ func SaveAccountLookUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData, err := postgres.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
 			return
 		}
 
-		lookedUserId := &structs.LoginData{}
+		lookedUserId := &types.LoginData{}
 		err = json.Unmarshal(requestData, &lookedUserId)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if mongodb.SaveLooked(lookedUserId.Id, loginData.Id) {
+		if userDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
@@ -75,21 +75,21 @@ func SaveLikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData, err := postgres.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
 			return
 		}
 
-		lookedUserId := &structs.LoginData{}
+		lookedUserId := &types.LoginData{}
 		err = json.Unmarshal(requestData, &lookedUserId)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if mongodb.SaveLiked(lookedUserId.Id, loginData.Id) {
+		if userDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
@@ -106,21 +106,21 @@ func SaveMatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user1Data, err := postgres.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		user1Data, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
 			return
 		}
 
-		user2Data := &structs.LoginData{}
+		user2Data := &types.LoginData{}
 		err = json.Unmarshal(requestData, &user2Data)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if mongodb.SaveMatch(user1Data.Id, user2Data.Id) {
+		if userDataStorage.Manager.SaveMatch(user1Data.Id, user2Data.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save matched to db.")

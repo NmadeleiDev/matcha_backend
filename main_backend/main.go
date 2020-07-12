@@ -1,8 +1,8 @@
 package main
 
 import (
-	"backend/db/mongodb"
-	"backend/db/postgres"
+	"backend/db/userDataStorage"
+	"backend/db/structuredDataStorage"
 	"backend/server"
 	"os"
 )
@@ -10,13 +10,11 @@ import (
 func main() {
 	port := os.Getenv("BACKEND_PORT")
 
-	defer postgres.CloseConnection()
-	defer mongodb.CloseConnection()
+	defer structuredDataStorage.Manager.CloseConnection()
+	defer userDataStorage.Manager.CloseConnection()
 
-	postgres.MakeConnection()
-	mongodb.MakeConnection()
-
-	postgres.InitTables()
+	structuredDataStorage.Init()
+	userDataStorage.Init()
 
 	server.StartServer(port)
 }

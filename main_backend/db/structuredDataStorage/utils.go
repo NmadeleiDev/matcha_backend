@@ -1,4 +1,4 @@
-package postgres
+package structuredDataStorage
 
 import (
 	"crypto/sha256"

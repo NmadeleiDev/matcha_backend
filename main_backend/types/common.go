@@ -1,4 +1,4 @@
-package structs
+package types
 
 type UserData struct {
 	Id		string	`json:"id,omitempty" bson:"id,omitempty"`
@@ -26,3 +26,13 @@ type LoginData struct {
 	Email    string `json:"email" bson:"email"`
 	Password string `json:"password"`
 }
+
+type Message struct {
+	Id					string		`json:"id" bson:"id"`
+	Sender				string		`json:"sender" bson:"sender"`
+	Recipient				string		`json:"recipient" bson:"recipient"`
+	Date				int			`json:"date" bson:"date"`
+	State				int			`json:"state" bson:"state"`
+	Text				string		`json:"text" bson:"text"`
+}
+

@@ -1,19 +1,21 @@
 package utils
 
 import (
-	"backend/db/postgres"
-	"backend/structs"
+	"backend/db/structuredDataStorage"
+	"backend/types"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
+	types2 "go/types"
 	"net/http"
+	"reflect"
 )
 
 const (
 	oneDayInSeconds = 86400
 )
 
-func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user structs.LoginData) bool {
-	sessionKey, err := postgres.IssueUserSessionKey(user)
+func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user types.LoginData) bool {
+	sessionKey, err := structuredDataStorage.IssueUserSessionKey(user)
 
 	if err != nil {
 		SendFailResponse(w, "incorrect user data")
@@ -49,7 +51,7 @@ func SendFailResponse(w http.ResponseWriter, text string) {
 	var packet []byte
 	var err error
 
-	response := &structs.ResponseJson{Status: false, Data: text}
+	response := &types.ResponseJson{Status: false, Data: text}
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}
@@ -62,7 +64,7 @@ func SendSuccessResponse(w http.ResponseWriter) {
 	var packet []byte
 	var err error
 
-	response := &structs.ResponseJson{Status: true, Data: nil}
+	response := &types.ResponseJson{Status: true, Data: nil}
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}
@@ -75,13 +77,41 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 	var packet []byte
 	var err error
 
-	response := &structs.ResponseJson{Status: true, Data: data}
+	response := &types.ResponseJson{Status: true, Data: data}
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}
 	if _, err = w.Write(packet); err != nil {
 		log.Error("Error sending response: ", err)
 	}
+}
+
+func IdentifyUserBySession(r *http.Request) (string, bool) {
+	session := GetCookieValue(r, "session_id")
+	data, err := structuredDataStorage.Manager.GetUserIdBySession(session)
+	if err != nil {
+		return "", false
+	}
+	return data.Id, true
+}
+
+func ReflectInterface(from interface{}, to interface{}) {
+	valFrom := reflect.ValueOf(from)
+	typeTo := reflect.TypeOf(to)
+	valTo := reflect.ValueOf(&to).Elem()
+	for i := 0; i < typeTo.NumField(); i++ {
+		name, ok := typeTo.Field(i).Tag.Lookup("ws")
+		if !ok {
+			continue
+		}
+		val := valFrom.FieldByName(name)
+		if valTo.Field(i).CanSet() {
+			valTo.Field(i).Set(val)
+		} else {
+			log.Infof("can't set field %v with val %v", typeTo.Field(i).Name, val)
+		}
+	}
+	log.Infof("Reflected: %v", to)
 }
 
 func DoesArrayContain(haystack []string, needle string) bool {

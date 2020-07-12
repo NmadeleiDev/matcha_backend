@@ -26,6 +26,8 @@ func StartServer(port string) {
 	router.HandleFunc("/like", handlers.SaveLikeActionHandler)
 	router.HandleFunc("/match", handlers.SaveMatchHandler)
 
+	router.HandleFunc("/ws", handlers.WebSocketHandler)
+
 	log.Info("Listening ", port)
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatal("Server error: ", err)

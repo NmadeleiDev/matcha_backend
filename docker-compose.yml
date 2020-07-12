@@ -45,8 +45,8 @@ services:
 
   mongodb:
     image: mongo:4.2.3
-    hostname: mongodb
-    container_name: mongodb
+    hostname: userDataStorage
+    container_name: userDataStorage
     ports:
       - ${MONGO_PORT}:27017
     volumes:
