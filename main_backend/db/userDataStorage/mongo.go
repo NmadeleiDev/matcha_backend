@@ -19,6 +19,11 @@ type ManagerStruct struct {
 	Conn *mongo.Client
 }
 
+type MongoCoords struct {
+	Type	string	`bson:"type"`
+	Coordinates		[]float64	`bson:"coordinates"`
+}
+
 func (m *ManagerStruct) MakeConnection() {
 	var err error
 	user := os.Getenv("MONGO_USER")
@@ -55,12 +60,28 @@ func (m *ManagerStruct) CreateUser(user types.UserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	user.Password = ""
-	user.LookedBy = []string{}
-	user.LikedBy = []string{}
-	user.Matches = []string{}
+	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
 
-	_, err := userCollection.InsertOne(context.TODO(), user)
+	userDocument := bson.D{
+		{"id", user.Id},
+		{"username", user.Username},
+		{"email", user.Email},
+		{"age", user.Age},
+		{"gender", user.Gender},
+		{"phone", user.Phone},
+		{"country", user.Country},
+		{"city", user.City},
+		{"max_dist", user.MaxDist},
+		{"look_for", user.LookFor},
+		{"min_age", user.MinAge},
+		{"max_age", user.MaxAge},
+		{"looked_by", []string{}},
+		{"liked_by", []string{}},
+		{"matches", []string{}},
+		{"position", position},
+	}
+
+	_, err := userCollection.InsertOne(context.TODO(), userDocument)
 	if err != nil {
 		log.Error("Error creating user in mongo: ", err)
 		return false

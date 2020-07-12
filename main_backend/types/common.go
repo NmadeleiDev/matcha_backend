@@ -19,7 +19,7 @@ type UserData struct {
 	LikedBy	[]string	`json:"liked_by" bson:"liked_by"`
 	LookedBy []string	`json:"looked_by" bson:"looked_by"`
 	Matches	[]string	`json:"matches" bson:"matches"`
-	GeoPosition Coordinates	`json:"position" bson:"position"`
+	GeoPosition Coordinates	`json:"position"`
 }
 
 type Coordinates struct {
