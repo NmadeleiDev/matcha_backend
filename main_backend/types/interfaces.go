@@ -8,6 +8,7 @@ type UserDataStorage interface {
 	GetUserData(user LoginData) (UserData, error)
 	UpdateUser(user UserData) bool
 	GetFittingUsers(user UserData) (results []UserData, ok bool)
+	SaveLiked(likedId, likerId string) bool
 	SaveLooked(lookedId, lookerId string) bool
 	SaveMatch(matched1Id, matched2Id string) bool
 	GetUserImages(id string) []string
