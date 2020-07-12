@@ -1,4 +1,4 @@
-const mongo = require('userDataStorage');
+const mongo = require('mongo');
 
 const MONGO_USER = process.env.MONGO_USER || "admin";
 const MONGO_PASSWORD = process.env.MONGO_PASSWORD || "passwd";

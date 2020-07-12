@@ -48,7 +48,7 @@ services:
     hostname: mongodb-matcha
     container_name: mongodb-matcha
     entrypoint: mongod --port ${MONGO_PORT}
-    command: mongo --eval "db.users.createIndex({location:"2dsphere"})"
+    command: ["mongo", "--eval", "'db.users.createIndex({location:'2dsphere'})'"]
     ports:
       - ${MONGO_PORT}:${MONGO_PORT}
     volumes:
