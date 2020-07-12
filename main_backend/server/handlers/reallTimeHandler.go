@@ -23,16 +23,18 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
-	connection, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Error("Error establishing ws connection: ", err)
-		return
-	}
 	id, ok := utils.IdentifyUserBySession(r)
 	if !ok {
 		utils.SendFailResponse(w, "Unauthorized request")
 		return
 	}
+	
+	connection, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Error("Error establishing ws connection: ", err)
+		return
+	}
+
 	user := &types.UserData{Id: id}
 
 	clientStruct := client.RegisterNewClient(connection, user)
