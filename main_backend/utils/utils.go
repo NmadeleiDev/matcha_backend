@@ -87,7 +87,7 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 
 func IdentifyUserBySession(r *http.Request) (string, bool) {
 	session := GetCookieValue(r, "session_id")
-	data, err := structuredDataStorage.Manager.GetUserIdBySession(session)
+	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		return "", false
 	}

@@ -15,6 +15,7 @@ func StartServer(port string) {
 	router.HandleFunc("/signin", handlers.SignInHandler)
 	router.HandleFunc("/signout", handlers.SignOutHandler)
 	router.HandleFunc("/user", handlers.UpdateAccountHandler)
+	router.HandleFunc("/verify/{key}", handlers.VerifyAccountHandler)
 
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
 

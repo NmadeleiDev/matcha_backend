@@ -18,11 +18,12 @@ type StructuredDataStorage interface {
 	MakeConnection()
 	CloseConnection()
 
-	CreateUser(userData *UserData) bool
+	CreateUser(userData *UserData) (string, bool)
 	LoginUser(loginData *LoginData) bool
 	SetSessionKeyById(sessionKey string, id string) bool
 	GetUserEmailBySession(sessionKey string) (user LoginData, err error)
-	GetUserIdBySession(sessionKey string) (user LoginData, err error)
+	GetUserLoginDataBySession(sessionKey string) (user LoginData, err error)
+	VerifyUserAccountState(key string) (string, bool)
 	UpdateSessionKey(old, new string) bool
 	IssueUserSessionKey(user LoginData) (string, error)
 

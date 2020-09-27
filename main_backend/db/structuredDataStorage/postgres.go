@@ -71,7 +71,8 @@ func (m *ManagerStruct) InitTables() {
             primary key,
     password      varchar(255) not null,
     email varchar(128) unique,
-    session_key   varchar(128) default NULL::character varying
+    session_key   varchar(128) default NULL::character varying,
+	acc_state		integer default 2
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
 		log.Error("Error creating table: ", err)
@@ -93,26 +94,27 @@ func (m *ManagerStruct) InitTables() {
 	}
 }
 
-func (m *ManagerStruct) CreateUser(userData *types.UserData) bool {
+func (m *ManagerStruct) CreateUser(userData *types.UserData) (string, bool) {
 
 	query := `
-INSERT INTO ` + userDataTable + `(email, password, id)
-VALUES ($1, $2, $3)`
+INSERT INTO ` + userDataTable + `(email, password, id, session_key)
+VALUES ($1, $2, $3, $4)` // здесь session_key создается, чтобы авторизовать почту юзера
 
 	rawId := userData.Email + time.Now().String() + strconv.Itoa(rand.Int())
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.Password), hashCost)
 	if err != nil {
 		log.Error("Error hashing password", err)
-		return false
+		return "", false
 	}
 
 	userData.Id = CalculateSha256(rawId)
-	_, err = m.Conn.Exec(query, userData.Email, passwordHash, userData.Id)
+	key := CalculateSha256(userData.Id + strconv.Itoa(rand.Int()))
+	_, err = m.Conn.Exec(query, userData.Email, passwordHash, userData.Id, key)
 	if err != nil {
 		log.Error("Error creating user: ", err)
-		return false
+		return "", false
 	}
-	return true
+	return key, true
 }
 
 func (m *ManagerStruct) LoginUser(loginData *types.LoginData) bool {
@@ -197,7 +199,7 @@ WHERE session_key=$1`
 	return user, err
 }
 
-func (m *ManagerStruct) GetUserIdBySession(sessionKey string) (user types.LoginData, err error) {
+func (m *ManagerStruct) GetUserLoginDataBySession(sessionKey string) (user types.LoginData, err error) {
 	query := `
 SELECT id
 FROM ` + userDataTable + ` 
@@ -221,17 +223,37 @@ WHERE session_key=$2`
 	return true
 }
 
-func (m *ManagerStruct) IssueUserSessionKey(user types.LoginData) (string, error) {
-	var truePassword string
+func (m *ManagerStruct) VerifyUserAccountState(key string) (string, bool) {
+	sessionKeyBytes := md5.Sum([]byte(time.Now().String() + key + strconv.Itoa(rand.Int())))
+	newSessionKey := fmt.Sprintf("%x", sessionKeyBytes)
 
 	query := `
-SELECT password FROM ` + userDataTable + ` 
+UPDATE ` + userDataTable + ` 
+SET acc_state=0, session_key=$2 
+WHERE session_key=$1`
+
+	if _, err := m.Conn.Exec(query, key, newSessionKey); err != nil {
+		log.Errorf("Error verifying acc state: %v", err)
+		return "", false
+	}
+	return newSessionKey, true
+}
+
+func (m *ManagerStruct) IssueUserSessionKey(user types.LoginData) (string, error) {
+	var truePassword string
+	var state int
+
+	query := `
+SELECT password, acc_state FROM ` + userDataTable + ` 
 WHERE id = $1`
 
 	row := m.Conn.QueryRow(query, user.Id)
-	if err := row.Scan(&truePassword); err != nil {
+	if err := row.Scan(&truePassword, &state); err != nil {
 		log.Error("Error getting user info: ", err)
 		return "", err
+	}
+	if state == 2 {
+		return "", errors.New("STATE")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(truePassword), []byte(user.Password)); err != nil {
 		log.Error("Error verifying password: ", err)

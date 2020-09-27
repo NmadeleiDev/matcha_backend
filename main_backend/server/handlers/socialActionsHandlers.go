@@ -14,7 +14,7 @@ import (
 func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		session := utils.GetCookieValue(r, "session_id")
-		user, err := structuredDataStorage.Manager.GetUserIdBySession(session)
+		user, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
 		if err != nil {
 			log.Error("Failed to get user data by session")
 			utils.SendFailResponse(w, "incorrect user data")
@@ -44,7 +44,7 @@ func SaveAccountLookUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
@@ -75,7 +75,7 @@ func SaveLikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
@@ -106,7 +106,7 @@ func SaveMatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user1Data, err := structuredDataStorage.Manager.GetUserIdBySession(utils.GetCookieValue(r, "session_id"))
+		user1Data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Session Id is invalid: ", err)
 			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")

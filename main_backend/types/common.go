@@ -42,3 +42,7 @@ type Message struct {
 	Text				string		`json:"text" bson:"text"`
 }
 
+type VerifyRequest struct {
+	AuthKey		string		`json:"auth_key"`
+}
+
