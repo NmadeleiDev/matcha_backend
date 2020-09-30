@@ -31,7 +31,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 		authKey, ok := structuredDataStorage.Manager.CreateUser(userData)
 		if !ok {
-			utils.SendFailResponse(w, "failed to create user")
+			utils.SendFailResponse(w, "User with this email already exists")
 			return
 		}
 
@@ -69,13 +69,12 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		if structuredDataStorage.Manager.LoginUser(loginData) {
 			userData, err := userDataStorage.Manager.GetUserData(*loginData)
 			if err != nil {
-				userData.Id = loginData.Id
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
+				userData.Id = loginData.Id
 				utils.RefreshRequestSessionKeyCookie(w, *loginData)
 				utils.SendDataResponse(w, userData)
-				return
 			}
 		} else {
 			utils.SendFailResponse(w,"incorrect user data")

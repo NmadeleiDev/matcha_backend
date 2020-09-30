@@ -252,9 +252,9 @@ WHERE id = $1`
 		log.Error("Error getting user info: ", err)
 		return "", err
 	}
-	if state == 2 {
-		return "", errors.New("STATE")
-	}
+	//if state == 2 { для разработки закоментил
+	//	return "", errors.New("STATE")
+	//}
 	if err := bcrypt.CompareHashAndPassword([]byte(truePassword), []byte(user.Password)); err != nil {
 		log.Error("Error verifying password: ", err)
 		return "", err

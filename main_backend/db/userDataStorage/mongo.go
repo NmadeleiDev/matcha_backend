@@ -66,7 +66,7 @@ func (m *ManagerStruct) CreateUser(user types.UserData) bool {
 		{"id", user.Id},
 		{"username", user.Username},
 		{"email", user.Email},
-		{"age", user.Age},
+		{"birth_date", user.BirthDate},
 		{"gender", user.Gender},
 		{"phone", user.Phone},
 		{"country", user.Country},
@@ -114,7 +114,7 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 
 	filter := bson.M{"id": user.Id}
 	update := bson.D{{"$set", bson.D{{"username", user.Username}}},
-		{"$set", bson.D{{"age", user.Age}}},
+		{"$set", bson.D{{"age", user.BirthDate}}},
 		{"$set", bson.D{{"gender", user.Gender}}},
 		{"$set", bson.D{{"phone", user.Phone}}},
 		{"$set", bson.D{{"country", user.Country}}},

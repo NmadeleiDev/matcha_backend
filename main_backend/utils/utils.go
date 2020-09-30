@@ -17,6 +17,7 @@ func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user types.LoginData)
 	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)
 
 	if err != nil {
+		log.Errorf("Error refreshing cookie: %v", err)
 		SendFailResponse(w, "incorrect user data")
 		return false
 	}

@@ -3,11 +3,12 @@ package emails
 import (
 	"log"
 	"net/smtp"
+	"os"
 )
 
 func Send(to, key string) {
-	from := "saveencrypteddata@gmail.com"
-	pass := "8ti7IKkyVBZT"
+	from := os.Getenv("SERVICE_MAIL_ADDR")
+	pass := os.Getenv("SERVICE_MAIL_PASSWD")
 
 	//link := "https://aim-love.ga/verify/" + key
 	link := "http://localhost:8081/api/v1/verify/" + key
