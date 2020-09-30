@@ -11,7 +11,7 @@ func Send(to, key string) {
 	pass := os.Getenv("SERVICE_MAIL_PASSWD")
 
 	//link := "https://aim-love.ga/verify/" + key
-	link := "http://localhost:8081/api/v1/verify/" + key
+	link := "http://localhost:" + os.Getenv("BACKEND_PORT") + "/api/v1/verify/" + key
 	body := `<h3>Hello from Matcha!</h3><p>To verify this email address, follow this <a href="` + link + `">link</a></p>`
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 

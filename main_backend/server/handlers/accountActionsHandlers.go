@@ -119,32 +119,30 @@ func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		key := mux.Vars(r)["key"]
+	key := mux.Vars(r)["key"]
 
-		if len(key) == 0 {
-			log.Error("Can't read request path for verify: ", r.URL.String())
-			utils.SendFailResponse(w, "Not correct key")
-			return
-		}
+	if len(key) == 0 {
+		log.Error("Can't read request path for verify: ", r.URL.String())
+		utils.SendFailResponse(w, "Not correct key")
+		return
+	}
 
-		newSessionKey, ok := structuredDataStorage.Manager.VerifyUserAccountState(key)
-		if ok {
-			utils.SetCookie(w, "session_id", newSessionKey)
-			login, err := structuredDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
-			if err != nil {
-				utils.SendFailResponse(w,"Failed to get user data")
-			} else {
-				data, err := userDataStorage.Manager.GetUserData(login)
-				if err != nil {
-					utils.SendFailResponse(w, "Failed to get user data")
-				} else {
-					utils.SendDataResponse(w, data)
-				}
-			}
+	newSessionKey, ok := structuredDataStorage.Manager.VerifyUserAccountState(key)
+	if ok {
+		utils.SetCookie(w, "session_id", newSessionKey)
+		login, err := structuredDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
+		if err != nil {
+			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			utils.SendFailResponse(w, "failed to verify user")
+			data, err := userDataStorage.Manager.GetUserData(login)
+			if err != nil {
+				utils.SendFailResponse(w, "Failed to get user data")
+			} else {
+				utils.SendDataResponse(w, data)
+			}
 		}
+	} else {
+		utils.SendFailResponse(w, "failed to verify user")
 	}
 }
 
