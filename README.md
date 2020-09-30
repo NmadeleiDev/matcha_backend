@@ -11,14 +11,14 @@ https://aim-love.ga
 
 В данный реализовано:
 
-- POST /api/v1/signup
+- POST /api/v1/signup - после этого запроса, на почту, указанную в email придет письмо с ссылкой для подтверждения (с почты, указанной в .env SERVICE_MAIL_ADDR)
 Валидное тело запроса:
 {
 	"email": "test3@gmail.com",
 	"phone": "89671102000",
 	"password": "123",
 	"username": "Mary",
-	"age": 20,
+	"birth_date": 958003200,
 	"gender": "female",
 	"country": "Russia",
 	"city": "Moscow",
