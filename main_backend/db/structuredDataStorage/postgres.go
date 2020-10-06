@@ -55,13 +55,13 @@ func (m *ManagerStruct) InitTables() {
 	query := `create schema if not exists ` + strings.Split(userDataTable, ".")[0]
 
 	if _, err := m.Conn.Exec(query); err != nil {
-		log.Error("Error creating schema: ", err)
+		log.Fatal("Error creating schema: ", err)
 	}
 
 	query = `create schema if not exists ` + strings.Split(messagesTable, ".")[0]
 
 	if _, err := m.Conn.Exec(query); err != nil {
-		log.Error("Error creating schema: ", err)
+		log.Fatal("Error creating schema: ", err)
 	}
 
 	query = `create table if not exists ` + userDataTable + `
@@ -75,7 +75,7 @@ func (m *ManagerStruct) InitTables() {
 	acc_state		integer default 2
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
-		log.Error("Error creating table: ", err)
+		log.Fatal("Error creating table: ", err)
 	}
 
 	query = `create table if not exists ` + messagesTable + `
@@ -90,7 +90,7 @@ func (m *ManagerStruct) InitTables() {
     text   varchar(1024) default ''
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
-		log.Error("Error creating table: ", err)
+		log.Fatal("Error creating table: ", err)
 	}
 }
 

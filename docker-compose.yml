@@ -19,6 +19,7 @@ services:
       SERVICE_MAIL_PASSWD: ${SERVICE_MAIL_PASSWD}
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
+    restart: always
     depends_on:
       #      - postgres
       - mongodb
@@ -39,6 +40,7 @@ services:
       STORAGE_PATH: ${STORAGE_PATH}
     ports:
       - ${MEDIA_SERVER_PORT}:${MEDIA_SERVER_PORT}
+    restart: always
     networks:
       - mongo_net
       - docker_net
