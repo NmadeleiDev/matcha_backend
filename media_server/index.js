@@ -1,7 +1,7 @@
 const express = require('express');
 const multer  = require('multer')
 const bodyParser = require('body-parser');
-const cors = require('cors');
+// const cors = require('cors');
 const mongoFuncs = require('./mongo');
 
 const MEDIA_SERVER_PORT = process.env.MEDIA_SERVER_PORT || 3333;
@@ -9,7 +9,7 @@ const STORAGE_PATH = process.env.STORAGE_PATH || '/app/storage/';
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+// app.use(cors());
 
 mongoFuncs.initConnection().catch(console.log);
 

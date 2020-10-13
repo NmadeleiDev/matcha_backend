@@ -113,8 +113,9 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.M{"id": user.Id}
-	update := bson.D{{"$set", bson.D{{"username", user.Username}}},
-		{"$set", bson.D{{"age", user.BirthDate}}},
+	update := bson.D{
+		{"$set", bson.D{{"username", user.Username}}},
+		{"$set", bson.D{{"birth_date", user.BirthDate}}},
 		{"$set", bson.D{{"gender", user.Gender}}},
 		{"$set", bson.D{{"phone", user.Phone}}},
 		{"$set", bson.D{{"country", user.Country}}},
@@ -141,9 +142,13 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	filter := bson.D{{"gender", user.LookFor}, {"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
-	//log.Info("Filter: ", filter)
-	//log.Info("UserId: ", user)
+	var filter bson.D
+
+	if user.LookFor == "male" || user.LookFor == "female" {
+		filter = bson.D{{"gender", user.LookFor}, {"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+	} else {
+		filter = bson.D{{"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+	}
 	cur, err := userCollection.Find(context.Background(),filter)
 	if  err != nil {
 		log.Error("Error finding user document: ", err)
