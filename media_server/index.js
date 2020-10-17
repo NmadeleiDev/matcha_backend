@@ -56,7 +56,7 @@ app.get("/img/*", function (req, res) {
     const fileId = req.params[0];
     mongoFuncs.getFileByDocumentId(fileId).then(data => {
         console.log(data);
-        res.sendFile( STORAGE_PATH + data.filename);
+        res.sendFile(STORAGE_PATH + data.filename);
     }).catch(console.log);
 });
 
