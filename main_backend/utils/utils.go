@@ -33,7 +33,7 @@ func SetCookie(w http.ResponseWriter, cookieName, value string) {
 		Path:  "/",
 		SameSite: http.SameSiteNoneMode,
 		Secure: true,
-		Domain: "localhost:3000",
+		//Domain: "localhost:3000",
 		MaxAge: oneDayInSeconds * 1}
 	http.SetCookie(w, &c)
 }
