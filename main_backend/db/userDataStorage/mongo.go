@@ -150,7 +150,10 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
 	maxStamp := nowIs - int64(user.MaxAge * yearInMilisecs)
 
-	log.Infof("Now  = %17v\nUser = %17v\nMax  = %17v\nMin  = %17v", nowIs, user.BirthDate, maxStamp, minStamp)
+	log.Infof("Now  = %17v", nowIs)
+	log.Infof("User = %17v", user.BirthDate)
+	log.Infof("Max  = %17v", maxStamp)
+	log.Infof("Min  = %17v", minStamp)
 
 	if user.LookFor == "male" || user.LookFor == "female" {
 		filter = bson.D{{"gender", user.LookFor},
