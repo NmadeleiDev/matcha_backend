@@ -159,13 +159,14 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 		filter = bson.D{{"gender", user.LookFor},
 			{"country", user.Country},
 			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"age", bson.D{{"$lte", minStamp}}}}}}}
+			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 	} else {
-		filter = bson.D{{"country", user.Country},
+		filter = bson.D{
+			{"country", user.Country},
 			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"age", bson.D{{"$lte", minStamp}}}}}}}
+			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 	}
-	cur, err := userCollection.Find(context.Background(),filter)
+	cur, err := userCollection.Find(context.Background(), filter)
 	if  err != nil {
 		log.Error("Error finding user document: ", err)
 		return nil, false
