@@ -83,7 +83,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		requestData, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Error("Can't read request body for login: ", err)
@@ -93,13 +93,15 @@ func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
 		userData := &types.UserData{}
 		err = json.Unmarshal(requestData, userData)
 		if err != nil {
-			log.Error("Can't parse request body for login: ", err)
+			log.Error("Can't parse request body: ", err)
+			utils.SendFailResponse(w, "Can't parse request body")
 			return
 		}
 
 		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Can't get user is: ", err)
+			utils.SendFailResponse(w, "Session cookie not present")
 			return
 		}
 

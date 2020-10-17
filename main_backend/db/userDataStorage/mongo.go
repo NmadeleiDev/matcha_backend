@@ -145,9 +145,14 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 	var filter bson.D
 
 	if user.LookFor == "male" || user.LookFor == "female" {
-		filter = bson.D{{"gender", user.LookFor}, {"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+		filter = bson.D{{"gender", user.LookFor},
+			{"country", user.Country},
+			{"city", user.City},
+			{"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
 	} else {
-		filter = bson.D{{"country", user.Country}, {"city", user.City}, {"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+		filter = bson.D{{"country", user.Country},
+			{"city", user.City},
+			{"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
 	}
 	cur, err := userCollection.Find(context.Background(),filter)
 	if  err != nil {
