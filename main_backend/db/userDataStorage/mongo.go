@@ -10,10 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"os"
+	"time"
 )
 
 const userDataCollection = "users"
 const mainDBName = "matcha"
+const yearInMilisecs = 31207680000
 
 type ManagerStruct struct {
 	Conn *mongo.Client
@@ -144,15 +146,21 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 
 	var filter bson.D
 
+	nowIs := time.Now().Unix() * 1000
+	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
+	maxStamp := nowIs - int64(user.MaxAge * yearInMilisecs)
+
+	log.Infof("Now  = %17v\nUser = %17v\nMax  = %17v\nMin  = %17v")
+
 	if user.LookFor == "male" || user.LookFor == "female" {
 		filter = bson.D{{"gender", user.LookFor},
 			{"country", user.Country},
 			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"age", bson.D{{"$lte", minStamp}}}}}}}
 	} else {
 		filter = bson.D{{"country", user.Country},
 			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"age", bson.D{{"$gte", user.MinAge}}}}, bson.D{{"age", bson.D{{"$lte", user.MaxAge}}}}}}}
+			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"age", bson.D{{"$lte", minStamp}}}}}}}
 	}
 	cur, err := userCollection.Find(context.Background(),filter)
 	if  err != nil {
