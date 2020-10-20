@@ -99,8 +99,8 @@ func (m *ManagerStruct) GetUserData(user types.LoginData) (types.UserData, error
 	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
 	container := types.UserData{}
-	err := userCollection.FindOne(context.Background(),filter).Decode(&container)
-	if  err != nil {
+	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
+	if err != nil {
 		log.Error("Error finding user document: ", err)
 		return types.UserData{}, err
 	} else {

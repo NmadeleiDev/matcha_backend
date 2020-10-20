@@ -24,3 +24,6 @@ down: ## stop the project (docker-compose)
 
 node-up:
 	cd ./media_server && node index.js
+
+push:
+	git add * .env* README.md && git commit -m "minor fixed" && git push
