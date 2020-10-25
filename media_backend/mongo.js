@@ -31,32 +31,79 @@ async function closeConnection() {
     }
 }
 
-async function insertImageData(data) {
-    let result;
-    let update;
-
-    const userCollection = client.db("matcha").collection("users");
-
+async function insertImageDataToMediaCollection(data) {
     const mediaCollection = client.db("media").collection("images");
     try {
-        result = await mediaCollection.insertOne(data)
+        return  await mediaCollection.insertOne(data)
     } catch (e) {
         console.log("error inserting image data: ",e)
         return null;
     }
+}
+
+async function getUserImageIds(userId) {
+    const userCollection = client.db("matcha").collection("users");
+
+    try {
+        let result = await userCollection.findOne({id: userId}, {images: 1}).images
+        if (Array.isArray(result))
+            return result
+        else
+            return []
+    } catch (e) {
+        console.log(e)
+        return []
+    }
+}
+
+async function insertImageData(data) {
+    let update;
+
+    const userCollection = client.db("matcha").collection("users");
+
+    if ((await getUserImageIds(data.id)).length >= 5) {
+        return false
+    }
+
+    let result = insertImageDataToMediaCollection(data);
+    if (!result) {
+        return null
+    }
+
+    update = {$push: {images: result.insertedId.toString()}}
 
     if (data.isAvatar === true || data.isAvatar === 'true')
-        update = {$set: {avatar: result.insertedId.toString()}}
-    else
-        update = {$push: {images: result.insertedId.toString()}};
+        update.$set = {avatar: result.insertedId.toString()}
 
     try {
         await userCollection.updateOne({id: data.id}, update)
     } catch (e) {
         console.log("error inserting image data: ",e)
-        return null;
+        return null
     }
     return result.insertedId;
+}
+
+async function setUserAvatar(userId, imageId) {
+    try {
+        if (!(await getUserImageIds(userId)).some(item => item === imageId)) {
+            return false
+        }
+    } catch (e) {
+        console.log(e)
+        return null
+    }
+
+    const userCollection = client.db("matcha").collection("users");
+
+    let update = {$set: {avatar: imageId}}
+    try {
+        await userCollection.updateOne({id: userId}, update)
+    } catch (e) {
+        console.log(e)
+        return null
+    }
+    return true
 }
 
 async function getFileByDocumentId(id) {
@@ -72,7 +119,45 @@ async function getFileByDocumentId(id) {
     return result;
 }
 
+async function deleteImagesIdFromUserImages(imageIds, userId) {
+    const update = {$pull: {images: {$in: imageIds}}}
+
+    const userCollection = client.db("matcha").collection("users");
+    try {
+        await userCollection.updateOne({id: userId}, update)
+        return true
+    } catch (e) {
+        console.log(e)
+        return null
+    }
+}
+
+async function deleteImageData(imageIds) {
+    let result
+
+    const collection = client.db("media").collection("images");
+
+    try {
+        result = await collection.find({ _id: { $in: [ imageIds.map(id => new mongo.ObjectID(id)) ] }})
+        if (!Array.isArray(result) || result.length <= 0) {
+            return null
+        }
+    } catch (e) {
+        console.log(e)
+        return null
+    }
+
+    const userId = result[0].id
+
+    if (!await deleteImagesIdFromUserImages(result.map(item => item._id), userId))
+        return null
+
+    return result.map(item => item.filename)
+}
+
 exports.initConnection = initConnection;
 exports.closeConnection = closeConnection;
 exports.getFileByDocumentId = getFileByDocumentId;
 exports.insertImageData = insertImageData;
+exports.deleteImageData = deleteImageData;
+exports.setUserAvatar = setUserAvatar;

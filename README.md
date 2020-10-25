@@ -19,14 +19,14 @@ https://aim-love.ga
 	"phone": "89671102000",
 	"password": "123",
 	"username": "Mary",
-	"birth_date": 958003200,
+	"birthDate": 958003200,
 	"gender": "female",
 	"country": "Russia",
 	"city": "Moscow",
-	"max_dist": 100,
-	"look_for": "male",
-	"min_age": 17,
-	"max_age": 38,
+	"maxDist": 100,
+	"lookFor": "male",
+	"minAge": 17,
+	"maxAge": 38,
 }
 
 - POST /api/main/signin - в ответ будет вся инфа юзера!
@@ -41,14 +41,16 @@ https://aim-love.ga
 	"id": "user id",
 	"phone": "89671102000",
 	"username": "Liza",
+	"name": "Liza",
+	"surname": "Liza",
 	"age": 17,
 	"gender": "female",
 	"country": "Russia",
 	"city": "Moscow",
-	"max_dist": 100,
-	"look_for": "male",
-	"min_age": 24,
-	"max_age": 47
+	"maxDist": 100,
+	"lookFor": "male",
+	"minAge": 24,
+	"maxAge": 47
 }
 
 - DELETE /api/main/signout - тут ничего, кроме самомого запроса отправлять не нужно, сервер просто сам обнулит сессию
@@ -59,8 +61,18 @@ https://aim-love.ga
 
 - POST /api/media/upload - загрука фоток. Тело:
 {
-    is_avatar: Boolean (true можешь писать только, когда устанавливаешь аватар, при любом другом значении этого поля, даже при его отсутсвии, фотка просто сохраниться в галерею пользователя)
-    user_image: <файл картинки (для того чтобы это был файл, надо просто указать тип инпута file)>
+    isAvatar: Boolean (true можешь писать только, когда устанавливаешь аватар, при любом другом значении этого поля, даже при его отсутсвии, фотка просто сохраниться в галерею пользователя)
+    userImage: <файл картинки (для того чтобы это был файл, надо просто указать тип инпута file)>
+}
+
+- PUT /api/media/avatar - установка уже загруженной фотки как аватара. Тело:
+{
+    imageId: <id существующей картинки этого пользователя>
+}
+
+- DELETE /api/media - удаление фотки. Тело:
+{
+    images: <id картинок этого пользователя к удалению>
 }
 
 - GET /api/media/img/<id картинки> - получение картинки
