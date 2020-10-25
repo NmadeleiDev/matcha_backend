@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"math/rand"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -175,6 +176,11 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 			log.Error("Failed to get user data")
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
+			if len(userData.Avatar) == 0 && len(userData.Images) > 0 {
+				userData.Avatar = userData.Images[rand.Intn(len(userData.Images))]
+			} else {
+				userData.Avatar = ""
+			}
 			userData.LikedBy = []string{}
 			userData.LookedBy = []string{}
 			userData.Matches = []string{}

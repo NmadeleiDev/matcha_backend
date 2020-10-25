@@ -26,4 +26,4 @@ node-up:
 	cd ./media_server && node index.js
 
 push:
-	git add * .env* README.md && git commit -m "minor fixed" && git push
+	git add docker-compose.yml .gitignore nginx/config/* nginx/Dockerfile main_backend/* media_backend/* .env* README.md && git commit -m "minor fixed" && git push

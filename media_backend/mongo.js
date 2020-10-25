@@ -35,6 +35,8 @@ async function insertImageData(data) {
     let result;
     let update;
 
+    const userCollection = client.db("matcha").collection("users");
+
     const mediaCollection = client.db("media").collection("images");
     try {
         result = await mediaCollection.insertOne(data)
@@ -42,7 +44,6 @@ async function insertImageData(data) {
         console.log("error inserting image data: ",e)
         return null;
     }
-    const userCollection = client.db("matcha").collection("users");
 
     if (data.isAvatar === true || data.isAvatar === 'true')
         update = {$set: {avatar: result.insertedId.toString()}}

@@ -47,7 +47,7 @@ app.post("/upload", upload.single('user_image'), function (req, res, next) {
         const fileData = {
             filename: req.file.filename,
             id: userId,
-            isAvatar: !(req.body.is_avatar) ? false : req.body.is_avatar,
+            isAvatar: !(req.body.isAvatar) ? false : req.body.isAvatar,
         }
         try {
             const id = await mongoFuncs.insertImageData(fileData)

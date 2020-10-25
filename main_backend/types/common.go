@@ -6,20 +6,22 @@ type UserData struct {
 	Phone     string   `json:"phone" bson:"phone"`
 	Password  string   `json:"password,omitempty" bson:"-"`
 	Username  string   `json:"username" bson:"username"`
-	BirthDate int64    `json:"birth_date" bson:"birth_date"`
+	Name  string   `json:"name" bson:"name"`
+	Surname  string   `json:"surname" bson:"surname"`
+	BirthDate int64    `json:"birthDate" bson:"birth_date"`
 	Gender    string   `json:"gender" bson:"gender"`
 	Country   string   `json:"country" bson:"country"`
 	City      string   `json:"city" bson:"city"`
-	MaxDist   int      `json:"max_dist" bson:"max_dist"`
-	LookFor   string   `json:"look_for" bson:"look_for"`
-	MinAge    int      `json:"min_age" bson:"min_age"`
-	MaxAge    int      `json:"max_age" bson:"max_age"`
+	MaxDist   int      `json:"maxDist" bson:"max_dist"`
+	LookFor   string   `json:"lookFor" bson:"look_for"`
+	MinAge    int      `json:"minAge" bson:"min_age"`
+	MaxAge    int      `json:"maxAge" bson:"max_age"`
 	Images    []string `json:"images" bson:"images"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
-	LikedBy   []string `json:"liked_by" bson:"liked_by"`
-	LookedBy []string	`json:"looked_by" bson:"looked_by"`
+	LikedBy   []string `json:"likedBy" bson:"liked_by"`
+	LookedBy []string	`json:"lookedBy" bson:"looked_by"`
 	Matches	[]string	`json:"matches" bson:"matches"`
-	GeoPosition Coordinates	`json:"position"`
+	GeoPosition Coordinates	`json:"position,omitempty"`
 }
 
 type Coordinates struct {
@@ -43,6 +45,6 @@ type Message struct {
 }
 
 type VerifyRequest struct {
-	AuthKey		string		`json:"auth_key"`
+	AuthKey		string		`json:"authKey"`
 }
 
