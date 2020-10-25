@@ -32,6 +32,8 @@ services:
     build:
       context: media_backend
     container_name: media_backend
+    volumes:
+      - ./images:/app/storage
     environment:
       MONGO_USER: ${MONGO_USER}
       MONGO_PASSWORD: ${MONGO_PASSWORD}

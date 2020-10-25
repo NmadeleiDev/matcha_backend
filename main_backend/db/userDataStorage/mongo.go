@@ -114,6 +114,8 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
+	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
+
 	filter := bson.M{"id": user.Id}
 	update := bson.D{
 		{"$set", bson.D{{"username", user.Username}}},
@@ -126,7 +128,7 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 		{"$set", bson.D{{"look_for", user.LookFor}}},
 		{"$set", bson.D{{"min_age", user.MinAge}}},
 		{"$set", bson.D{{"max_age", user.MaxAge}}},
-		{"$set", bson.D{{"position", user.GeoPosition}}}}
+		{"$set", bson.D{{"position", position}}}}
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
 	if  err != nil {

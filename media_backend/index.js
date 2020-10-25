@@ -79,15 +79,15 @@ app.put("/avatar", function (req, res) {
     pgFuncs.getUserIdBySession(sessionId).then(async (userId) => {
         if (!userId) {
             res.end(JSON.stringify({status: false, data: `Session key ${sessionId} is not valid`}));
-            return;
+            return
         }
         let setResult = await mongoFuncs.setUserAvatar(userId, imageId)
         if (setResult === true) {
-            res.end({status: true, data: "Avatar set successfully"});
+            res.end(JSON.stringify({status: true, data: "Avatar set successfully"}));
         } else if (setResult === false) {
-            res.end({status: false, data: "imageId is not in user images"});
+            res.end(JSON.stringify({status: false, data: "imageId is not in user images"}));
         } else {
-            res.end({status: false, data: "error setting user avatar"});
+            res.end(JSON.stringify({status: false, data: "error setting user avatar"}));
         }
     })
 })
@@ -101,17 +101,18 @@ app.delete("/", function (req, res) {
 
     if (!Array.isArray(imageIds)) {
         response.data = `"images" field must be array; ${typeof imageIds} given`
-        res.send(JSON.stringify(response))
+        res.end(JSON.stringify(response))
+        return
     }
 
     mongoFuncs.deleteImageData(imageIds).then(result => {
         if (Array.isArray(result)) {
             response.data = 'success'
             response.status = true
-            res.send(JSON.stringify(response))
+            res.end(JSON.stringify(response))
             utils.deleteImagesFromStorage(result.map(item => STORAGE_PATH + item)).catch(console.error)
         } else {
-            res.send(JSON.stringify(response))
+            res.end(JSON.stringify(response))
         }
     }).catch((e) => console.error(e))
 })

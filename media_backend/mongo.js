@@ -34,17 +34,18 @@ async function closeConnection() {
 async function insertImageDataToMediaCollection(data) {
     const mediaCollection = client.db("media").collection("images");
     try {
-        return  await mediaCollection.insertOne(data)
+        const result = await mediaCollection.insertOne(data)
+        return result.insertedId.toString()
     } catch (e) {
-        console.log("error inserting image data: ",e)
-        return null;
+        console.log("error inserting image data: ", e)
+        return null
     }
 }
 
 async function getUserImageIds(userId) {
     const userCollection = client.db("matcha").collection("users");
 
-    try {
+    try { // TODO: projection не срабатывает!
         let result = await userCollection.findOne({id: userId}, {images: 1}).images
         if (Array.isArray(result))
             return result
@@ -64,16 +65,22 @@ async function insertImageData(data) {
     if ((await getUserImageIds(data.id)).length >= 5) {
         return false
     }
+    console.log("Passed num images limit")
 
-    let result = insertImageDataToMediaCollection(data);
-    if (!result) {
+    let insertedId = await insertImageDataToMediaCollection(data);
+    if (!insertedId) {
         return null
     }
+    console.log("Image data inserted: ", data, insertedId)
 
-    update = {$push: {images: result.insertedId.toString()}}
+    if (typeof insertedId !== 'string') {
+        console.log("Inserted id is not string!", typeof insertedId, insertedId, data)
+        return null
+    }
+    update = {$push: {images: insertedId}}
 
     if (data.isAvatar === true || data.isAvatar === 'true')
-        update.$set = {avatar: result.insertedId.toString()}
+        update.$set = {avatar: insertedId}
 
     try {
         await userCollection.updateOne({id: data.id}, update)
@@ -81,18 +88,21 @@ async function insertImageData(data) {
         console.log("error inserting image data: ",e)
         return null
     }
-    return result.insertedId;
+    return insertedId;
 }
 
 async function setUserAvatar(userId, imageId) {
     try {
-        if (!(await getUserImageIds(userId)).some(item => item === imageId)) {
+        const result = await getUserImageIds(userId)
+        console.log("Got user images: ", result)
+        if (!result.some(item => item === imageId)) {
             return false
         }
     } catch (e) {
         console.log(e)
         return null
     }
+    console.log(`Image ${imageId} for ${userId} found`)
 
     const userCollection = client.db("matcha").collection("users");
 
