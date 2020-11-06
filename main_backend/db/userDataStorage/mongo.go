@@ -151,6 +151,8 @@ func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
 	filter := bson.M{"id": user.Id}
 	update := bson.D{
 		{"$set", bson.D{{"username", user.Username}}},
+		{"$set", bson.D{{"name", user.Name}}},
+		{"$set", bson.D{{"surname", user.Surname}}},
 		{"$set", bson.D{{"birth_date", user.BirthDate}}},
 		{"$set", bson.D{{"gender", user.Gender}}},
 		{"$set", bson.D{{"phone", user.Phone}}},
