@@ -20,7 +20,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "incorrect user data")
 			return
 		}
-		userData, err := userDataStorage.Manager.GetUserData(user)
+		userData, err := userDataStorage.Manager.GetFullUserData(user, false)
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")

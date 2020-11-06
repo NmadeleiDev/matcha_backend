@@ -17,7 +17,10 @@ func StartServer(port string) {
 	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 	router.HandleFunc("/verify/{key}", handlers.VerifyAccountHandler)
 
+	router.HandleFunc("/data", handlers.GetOwnDataHandler)
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
+
+	router.HandleFunc("/tag", handlers.UserTagsHandler)
 
 	router.HandleFunc("/media", handlers.GetUserOwnImagesHandler) // получить свои фотки
 

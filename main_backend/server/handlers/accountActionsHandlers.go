@@ -6,27 +6,18 @@ import (
 	"backend/emails"
 	"backend/types"
 	"backend/utils"
-	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
-	"math/rand"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "POST" {
-		requestData, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Error("Can't read request body for login: ", err)
-			return
-		}
-
-		userData := &types.UserData{}
-		err = json.Unmarshal(requestData, userData)
-		if err != nil {
-			log.Error("Can't parse request body for login: ", err)
+	if r.Method == http.MethodPost {
+		userData, ok := utils.UnmarshalHttpBodyToUserData(w, r)
+		if !ok {
+			utils.SendFailResponse(w, "Can't parse request body")
 			return
 		}
 
@@ -53,22 +44,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		requestData, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Error("Can't read request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
-			return
-		}
-
-		loginData := &types.LoginData{}
-		err = json.Unmarshal(requestData, loginData)
-		if err != nil {
-			log.Error("Can't parse request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
+		loginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			utils.SendFailResponse(w, "Can't parse request body")
 			return
 		}
 		if structuredDataStorage.Manager.LoginUser(loginData) {
-			userData, err := userDataStorage.Manager.GetUserData(*loginData)
+			userData, err := userDataStorage.Manager.GetFullUserData(*loginData, false)
 			if err != nil {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
@@ -85,16 +67,8 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 
 func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
-		requestData, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Error("Can't read request body for login: ", err)
-			return
-		}
-
-		userData := &types.UserData{}
-		err = json.Unmarshal(requestData, userData)
-		if err != nil {
-			log.Error("Can't parse request body: ", err)
+		userData, ok := utils.UnmarshalHttpBodyToUserData(w, r)
+		if !ok {
 			utils.SendFailResponse(w, "Can't parse request body")
 			return
 		}
@@ -137,7 +111,7 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			data, err := userDataStorage.Manager.GetUserData(login)
+			data, err := userDataStorage.Manager.GetFullUserData(login, false)
 			if err != nil {
 				utils.SendFailResponse(w, "Failed to get user data")
 			} else {
@@ -162,28 +136,93 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetOwnDataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		session := utils.GetCookieValue(r,"session_id")
+		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+		if err != nil {
+			utils.SendFailResponse(w, "incorrect session id")
+			return
+		}
+		userData, err := utils.GetFullUserData(loginData, false)
+		if err != nil {
+			utils.SendFailResponse(w,"Failed to get user data")
+		} else {
+			utils.SendDataResponse(w, userData)
+			return
+		}
+	}
+}
+
+func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
+	session := utils.GetCookieValue(r,"session_id")
+	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	if err != nil && r.Method != http.MethodGet {
+		utils.SendFailResponse(w, "incorrect session id")
+		return
+	}
+	tags, ok := utils.UnmarshalHttpBodyToTags(w, r)
+	if !ok {
+		utils.SendFailResponse(w, "Can't parse request body")
+		return
+	}
+	if r.Method == http.MethodPut {
+		failedTags := make([]string, 0, len(tags.Tags))
+		for _, tag := range tags.Tags {
+			id, err := structuredDataStorage.Manager.IncOrInsertTag(tag)
+			if err != nil {
+				failedTags = append(failedTags, tag)
+			} else {
+				userDataStorage.Manager.AddTagToUserTags(loginData, id)
+			}
+		}
+
+		if len(failedTags) == 0 {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponse(w, fmt.Sprintf("Failed to save tags: %v", failedTags))
+		}
+	} else if r.Method == http.MethodDelete {
+		failedTags := make([]string, 0, len(tags.Tags))
+		for _, tag := range tags.Tags {
+			id, err := structuredDataStorage.Manager.DecrTag(tag)
+			ok := userDataStorage.Manager.DeleteTagFromUserTags(loginData, id)
+			if err != nil || !ok {
+				failedTags = append(failedTags, tag)
+			}
+		}
+		go structuredDataStorage.Manager.ClearUnmentionedTags()
+
+		if len(failedTags) == 0 {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete tags: %v", failedTags))
+		}
+	} else if r.Method == http.MethodGet {
+		utils.SendDataResponse(w, structuredDataStorage.Manager.GetAllTags())
+	}
+}
+
 func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
+		var userData interface{}
 		id := mux.Vars(r)["id"]
+		isShortData := r.URL.Query().Get("full") == "false"
+
 		session := utils.GetCookieValue(r,"session_id")
 		_, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
 		if err != nil {
 			utils.SendFailResponse(w, "incorrect session id")
 			return
 		}
-		userData, err := userDataStorage.Manager.GetUserData(types.LoginData{Id: id})
+		if isShortData {
+			userData, err = userDataStorage.Manager.GetShortUserData(types.LoginData{Id: id})
+		} else {
+			userData, err = utils.GetFullUserData(types.LoginData{Id: id}, true)
+		}
 		if err != nil {
-			log.Error("Failed to get user data")
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			if len(userData.Avatar) == 0 && len(userData.Images) > 0 {
-				userData.Avatar = userData.Images[rand.Intn(len(userData.Images))]
-			} else {
-				userData.Avatar = ""
-			}
-			userData.LikedBy = []string{}
-			userData.LookedBy = []string{}
-			userData.Matches = []string{}
 			utils.SendDataResponse(w, userData)
 			return
 		}

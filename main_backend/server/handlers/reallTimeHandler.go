@@ -37,7 +37,7 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	user := &types.UserData{Id: id}
+	user := &types.FullUserData{Id: id}
 
 	clientStruct := client.RegisterNewClient(connection, user)
 	go clientStruct.ReadHub()

@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -58,7 +59,7 @@ func (m *ManagerStruct) CloseConnection() {
 	}
 }
 
-func (m *ManagerStruct) CreateUser(user types.UserData) bool {
+func (m *ManagerStruct) CreateUser(user types.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -91,26 +92,57 @@ func (m *ManagerStruct) CreateUser(user types.UserData) bool {
 	return true
 }
 
-func (m *ManagerStruct) GetUserData(user types.LoginData) (types.UserData, error) {
+func (m *ManagerStruct) GetFullUserData(user types.LoginData, isPublic bool) (types.FullUserData, error) {
 
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
-	container := types.UserData{}
+	container := types.FullUserData{}
 	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
 	if err != nil {
 		log.Error("Error finding user document: ", err)
-		return types.UserData{}, err
-	} else {
-		log.Info("Got user document: ", container)
+		return types.FullUserData{}, err
+	}
+
+	if isPublic {
+		container.LikedBy = []string{}
+		container.LookedBy = []string{}
+		container.Matches = []string{}
+	}
+
+	if len(container.Avatar) == 0 && len(container.Images) > 0 {
+		container.Avatar = container.Images[rand.Intn(len(container.Images))]
 	}
 
 	return container, nil
 }
 
-func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
+func (m *ManagerStruct) GetShortUserData(user types.LoginData) (types.ShortUserData, error) {
+
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	log.Info("UserId: ", user)
+	filter := bson.M{"id": user.Id}
+	container := types.ShortUserData{}
+	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
+	if err != nil {
+		log.Error("Error finding user document: ", err)
+		return types.ShortUserData{}, err
+	} else {
+		log.Infof("Got user document: %v; avatar = %v", container, container.Avatar)
+	}
+
+	if len(container.Avatar) == 0 && len(container.Images) > 0 {
+		container.Avatar = container.Images[rand.Intn(len(container.Images))]
+	}
+
+	return container, nil
+}
+
+func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -142,7 +174,45 @@ func (m *ManagerStruct) UpdateUser(user types.UserData) bool {
 	return true
 }
 
-func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.UserData, ok bool) {
+func (m *ManagerStruct) AddTagToUserTags(user types.LoginData, tagId int64) bool {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.M{"id": user.Id}
+	update := bson.D{{"$addToSet", bson.D{{"tag_ids", tagId}}}}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if  err != nil {
+		log.Error("Error updating user document: ", err)
+		return false
+	}
+	if res.MatchedCount != 1 {
+		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		return false
+	}
+	return true
+}
+
+func (m *ManagerStruct) DeleteTagFromUserTags(user types.LoginData, tagId int64) bool {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.M{"id": user.Id}
+	update := bson.D{{"$pull", bson.D{{"tag_ids", tagId}}}}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if  err != nil {
+		log.Error("Error updating user document: ", err)
+		return false
+	}
+	if res.MatchedCount != 1 {
+		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		return false
+	}
+	return true
+}
+
+func (m *ManagerStruct) GetFittingUsers(user types.FullUserData) (results []types.FullUserData, ok bool) {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -176,7 +246,7 @@ func (m *ManagerStruct) GetFittingUsers(user types.UserData) (results []types.Us
 	defer cur.Close(context.Background())
 
 	for cur.Next(context.Background()) {
-		container := types.UserData{}
+		container := types.FullUserData{}
 		err := cur.Decode(&container)
 		if err != nil {
 			log.Error("Error decoding user: ", err)
@@ -227,7 +297,7 @@ func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
 }
 
 func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
-	user := types.UserData{}
+	user := types.FullUserData{}
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 

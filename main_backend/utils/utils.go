@@ -2,6 +2,7 @@ package utils
 
 import (
 	"backend/db/structuredDataStorage"
+	"backend/db/userDataStorage"
 	"backend/types"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
@@ -12,6 +13,17 @@ import (
 const (
 	oneDayInSeconds = 86400
 )
+
+func GetFullUserData(loginData types.LoginData, isPublic bool) (types.FullUserData, error) {
+	userData, err := userDataStorage.Manager.GetFullUserData(loginData, isPublic)
+	if err != nil {
+		log.Error("Failed to get user data")
+		return types.FullUserData{}, err
+	} else {
+		userData.Tags = structuredDataStorage.Manager.GetTagsById(userData.TagIds)
+		return userData, nil
+	}
+}
 
 func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user types.LoginData) bool {
 	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)

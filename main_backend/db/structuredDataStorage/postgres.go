@@ -3,9 +3,12 @@ package structuredDataStorage
 import (
 	"backend/types"
 	"crypto/md5"
-	"database/sql"
+	_ "database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	_ "github.com/lib/pq"
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
@@ -18,12 +21,13 @@ import (
 
 const (
 	userDataTable = "user_data_schema.user_data"
+	tagsTable = "user_data_schema.tags"
 	messagesTable = "message_data_schema.messages"
 	hashCost      = 14
 )
 
 type ManagerStruct struct {
-	Conn	*sql.DB
+	Conn	*sqlx.DB
 }
 
 func (m *ManagerStruct) MakeConnection() {
@@ -34,7 +38,7 @@ func (m *ManagerStruct) MakeConnection() {
 	db := os.Getenv("POSTGRES_DB")
 
 	connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", user, password, host, port, db)
-	conn, err := sql.Open("postgres", connStr)
+	conn, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal("Error connecting to database: ", err)
 	}
@@ -78,6 +82,19 @@ func (m *ManagerStruct) InitTables() {
 		log.Fatal("Error creating table: ", err)
 	}
 
+	query = `create table if not exists ` + tagsTable + `
+(
+    id            serial
+		constraint tags_pk
+			primary key,
+    value      varchar(255) not null,
+    hash varchar(32) unique not null,
+    times_mentioned   integer default 1
+)`
+	if _, err := m.Conn.Exec(query); err != nil {
+		log.Fatal("Error creating table: ", err)
+	}
+
 	query = `create table if not exists ` + messagesTable + `
 (
     id            varchar(256)       not null
@@ -94,7 +111,7 @@ func (m *ManagerStruct) InitTables() {
 	}
 }
 
-func (m *ManagerStruct) CreateUser(userData *types.UserData) (string, bool) {
+func (m *ManagerStruct) CreateUser(userData *types.FullUserData) (string, bool) {
 
 	query := `
 INSERT INTO ` + userDataTable + `(email, password, id, session_key)
@@ -267,4 +284,82 @@ WHERE id = $1`
 	} else {
 		return "", errors.New("error updating session key")
 	}
+}
+
+func (m *ManagerStruct) IncOrInsertTag(tag string) (id int64, err error) {
+	tagBytes := md5.Sum([]byte(tag))
+	tagHash := fmt.Sprintf("%x", tagBytes)
+
+	query := `INSERT INTO ` + tagsTable + ` AS tt (value, hash) 
+		VALUES ($1, $2)
+		ON CONFLICT (hash) DO UPDATE SET times_mentioned=tt.times_mentioned + 1
+		RETURNING id`
+
+	if err := m.Conn.QueryRow(query, tag, tagHash).Scan(&id); err != nil {
+		log.Errorf("Error upserting tag: %v", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func (m *ManagerStruct) DecrTag(tag string) (id int64, err error) {
+	//tagBytes := md5.Sum([]byte(tag))
+	//tagHash := fmt.Sprintf("%x", tagBytes)
+
+	query := `UPDATE ` + tagsTable + ` AS tt SET times_mentioned=tt.times_mentioned - 1 
+		WHERE value=$1 RETURNING id`
+
+	if err := m.Conn.QueryRow(query, tag).Scan(&id); err != nil {
+		log.Errorf("Error decrementing tag: %v", err)
+		return 0, err
+	}
+	return id, nil
+}
+
+func (m *ManagerStruct) ClearUnmentionedTags() {
+	query := `DELETE FROM ` + tagsTable + ` WHERE times_mentioned <= 0`
+
+	if _, err := m.Conn.Exec(query); err != nil {
+		log.Errorf("Error cleaning tags: %v", err)
+	}
+}
+
+func (m *ManagerStruct) GetTagsById(ids []int64) (tags []string) {
+	query := `SELECT value FROM ` + tagsTable + ` 
+		WHERE id=ANY($1)`
+
+	rows, err := m.Conn.Query(query, pq.Array(ids))
+	if err != nil {
+		log.Errorf("Error finding tags by ids: %v", err)
+		return nil
+	}
+	for rows.Next() {
+		cont := ""
+		if err := rows.Scan(&cont); err != nil {
+			log.Errorf("Error scanning tag: %v", err)
+			continue
+		}
+		tags = append(tags, cont)
+	}
+	return tags
+}
+
+func (m *ManagerStruct) GetAllTags() (tags []string) {
+	query := `SELECT value FROM ` + tagsTable + ` 
+		ORDER BY times_mentioned DESC`
+
+	rows, err := m.Conn.Query(query)
+	if err != nil {
+		log.Errorf("Error finding tags by ids: %v", err)
+		return nil
+	}
+	for rows.Next() {
+		cont := ""
+		if err := rows.Scan(&cont); err != nil {
+			log.Errorf("Error scanning tag: %v", err)
+			continue
+		}
+		tags = append(tags, cont)
+	}
+	return tags
 }

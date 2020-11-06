@@ -1,6 +1,6 @@
 package types
 
-type UserData struct {
+type FullUserData struct {
 	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
 	Email     string   `json:"email" bson:"email"`
 	Phone     string   `json:"phone" bson:"phone"`
@@ -21,7 +21,20 @@ type UserData struct {
 	LikedBy   []string `json:"likedBy" bson:"liked_by"`
 	LookedBy []string	`json:"lookedBy" bson:"looked_by"`
 	Matches	[]string	`json:"matches" bson:"matches"`
+	TagIds	[]int64		`json:"-" bson:"tag_ids"`
+	Tags	[]string		`json:"tags" bson:"-"`
 	GeoPosition Coordinates	`json:"position,omitempty"`
+}
+
+type ShortUserData struct {
+	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
+	Username  string   `json:"username" bson:"username"`
+	BirthDate int64    `json:"birthDate" bson:"birth_date"`
+	Gender    string   `json:"gender" bson:"gender"`
+	Avatar    string   `json:"avatar" bson:"avatar"`
+	Images    []string `json:"-" bson:"images"` // для того, чтобы при выгрузке взять аватар из картинок, если сам аватар не установлен. На фронт никогда не передается
+	City      string   `json:"city" bson:"city"`
+	Country   string   `json:"country" bson:"country"`
 }
 
 type Coordinates struct {
@@ -48,3 +61,6 @@ type VerifyRequest struct {
 	AuthKey		string		`json:"authKey"`
 }
 
+type Tags struct {
+	Tags []string		`json:"tags"`
+}

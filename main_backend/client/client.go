@@ -29,7 +29,7 @@ type Client struct {
 	ReadMessageChan chan types.SocketMessage
 }
 
-func	RegisterNewClient(connection *websocket.Conn, user *types.UserData) (client *Client) {
+func	RegisterNewClient(connection *websocket.Conn, user *types.FullUserData) (client *Client) {
 	client = &Client{Id: user.Id, Connection: connection, ReadMessageChan:make(chan types.SocketMessage), IsOnline: true}
 	Clients[user.Id] = client
 	return client
