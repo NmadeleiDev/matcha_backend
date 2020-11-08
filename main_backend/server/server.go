@@ -17,8 +17,10 @@ func StartServer(port string) {
 	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 	router.HandleFunc("/verify/{key}", handlers.VerifyAccountHandler)
 
-	router.HandleFunc("/data", handlers.GetOwnDataHandler)
+	router.HandleFunc("/account", handlers.ManageOwnAccountHandler)
+	router.HandleFunc("/actions/{action}", handlers.GetOwnActionsHandler)
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
+	router.HandleFunc("/ban", handlers.ManageBannedUsersHandler)
 
 	router.HandleFunc("/tag", handlers.UserTagsHandler)
 
@@ -26,9 +28,9 @@ func StartServer(port string) {
 
 	router.HandleFunc("/strangers", handlers.GetStrangersHandler)
 
-	router.HandleFunc("/look", handlers.SaveAccountLookUpHandler)
-	router.HandleFunc("/like", handlers.SaveLikeActionHandler)
-	router.HandleFunc("/match", handlers.SaveMatchHandler)
+	router.HandleFunc("/look", handlers.LookActionHandler)
+	router.HandleFunc("/like", handlers.LikeActionHandler)
+	router.HandleFunc("/match", handlers.MatchHandler)
 
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
 

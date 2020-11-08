@@ -15,7 +15,14 @@ const (
 )
 
 func GetFullUserData(loginData types.LoginData, isPublic bool) (types.FullUserData, error) {
-	userData, err := userDataStorage.Manager.GetFullUserData(loginData, isPublic)
+	var variant string
+
+	if isPublic {
+		variant = "public"
+	} else {
+		variant = "private"
+	}
+	userData, err := userDataStorage.Manager.GetFullUserData(loginData, variant)
 	if err != nil {
 		log.Error("Failed to get user data")
 		return types.FullUserData{}, err

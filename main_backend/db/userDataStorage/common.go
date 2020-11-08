@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"math/rand"
 	"os"
 	"time"
 )
@@ -57,123 +56,6 @@ func (m *ManagerStruct) CloseConnection() {
 	if err := m.Conn.Disconnect(context.TODO()); err != nil {
 		log.Error("Error closing mongo: ", err)
 	}
-}
-
-func (m *ManagerStruct) CreateUser(user types.FullUserData) bool {
-	database := m.Conn.Database(mainDBName)
-	userCollection := database.Collection(userDataCollection)
-
-	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
-
-	userDocument := bson.D{
-		{"id", user.Id},
-		{"username", user.Username},
-		{"email", user.Email},
-		{"birth_date", user.BirthDate},
-		{"gender", user.Gender},
-		{"phone", user.Phone},
-		{"country", user.Country},
-		{"city", user.City},
-		{"max_dist", user.MaxDist},
-		{"look_for", user.LookFor},
-		{"min_age", user.MinAge},
-		{"max_age", user.MaxAge},
-		{"looked_by", []string{}},
-		{"liked_by", []string{}},
-		{"matches", []string{}},
-		{"position", position},
-	}
-
-	_, err := userCollection.InsertOne(context.TODO(), userDocument)
-	if err != nil {
-		log.Error("Error creating user in mongo: ", err)
-		return false
-	}
-	return true
-}
-
-func (m *ManagerStruct) GetFullUserData(user types.LoginData, isPublic bool) (types.FullUserData, error) {
-
-	database := m.Conn.Database(mainDBName)
-	userCollection := database.Collection(userDataCollection)
-
-	log.Info("UserId: ", user)
-	filter := bson.M{"id": user.Id}
-	container := types.FullUserData{}
-	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
-	if err != nil {
-		log.Error("Error finding user document: ", err)
-		return types.FullUserData{}, err
-	}
-
-	if isPublic {
-		container.LikedBy = []string{}
-		container.LookedBy = []string{}
-		container.Matches = []string{}
-	}
-
-	if len(container.Avatar) == 0 && len(container.Images) > 0 {
-		container.Avatar = container.Images[rand.Intn(len(container.Images))]
-	}
-
-	return container, nil
-}
-
-func (m *ManagerStruct) GetShortUserData(user types.LoginData) (types.ShortUserData, error) {
-
-	database := m.Conn.Database(mainDBName)
-	userCollection := database.Collection(userDataCollection)
-
-	log.Info("UserId: ", user)
-	filter := bson.M{"id": user.Id}
-	container := types.ShortUserData{}
-	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
-	if err != nil {
-		log.Error("Error finding user document: ", err)
-		return types.ShortUserData{}, err
-	} else {
-		log.Infof("Got user document: %v; avatar = %v", container, container.Avatar)
-	}
-
-	if len(container.Avatar) == 0 && len(container.Images) > 0 {
-		container.Avatar = container.Images[rand.Intn(len(container.Images))]
-	}
-
-	return container, nil
-}
-
-func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
-	database := m.Conn.Database(mainDBName)
-	userCollection := database.Collection(userDataCollection)
-
-	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
-
-	filter := bson.M{"id": user.Id}
-	update := bson.D{
-		{"$set", bson.D{{"username", user.Username}}},
-		{"$set", bson.D{{"name", user.Name}}},
-		{"$set", bson.D{{"surname", user.Surname}}},
-		{"$set", bson.D{{"birth_date", user.BirthDate}}},
-		{"$set", bson.D{{"gender", user.Gender}}},
-		{"$set", bson.D{{"phone", user.Phone}}},
-		{"$set", bson.D{{"country", user.Country}}},
-		{"$set", bson.D{{"city", user.City}}},
-		{"$set", bson.D{{"max_dist", user.MaxDist}}},
-		{"$set", bson.D{{"look_for", user.LookFor}}},
-		{"$set", bson.D{{"min_age", user.MinAge}}},
-		{"$set", bson.D{{"max_age", user.MaxAge}}},
-		{"$set", bson.D{{"position", position}}}}
-
-	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
-	if  err != nil {
-		log.Error("Error updating user document: ", err)
-		return false
-	}
-	if res.MatchedCount != 1 {
-		log.Error("Error find user document (res.MatchedCount != 1): ", err)
-		return false
-	}
-	return true
 }
 
 func (m *ManagerStruct) AddTagToUserTags(user types.LoginData, tagId int64) bool {
@@ -230,12 +112,15 @@ func (m *ManagerStruct) GetFittingUsers(user types.FullUserData) (results []type
 	log.Infof("Min  = %17v", minStamp)
 
 	if user.LookFor == "male" || user.LookFor == "female" {
-		filter = bson.D{{"gender", user.LookFor},
+		filter = bson.D{
+			{"id", bson.M{"$nin": user.BannedUserIds}},
+			{"gender", user.LookFor},
 			{"country", user.Country},
 			{"city", user.City},
 			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 	} else {
 		filter = bson.D{
+			{"id", bson.M{"$nin": user.BannedUserIds}},
 			{"country", user.Country},
 			{"city", user.City},
 			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
@@ -267,7 +152,7 @@ func (m *ManagerStruct) SaveLooked(lookedId, lookerId string) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", lookedId}}
-	update := bson.D{{"$push", bson.D{{"looked_by", lookerId}}}}
+	update := bson.D{{"$addToSet", bson.D{{"looked_by", lookerId}}}}
 	opts := options.Update()
 
 	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -296,6 +181,61 @@ func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
 
 func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
 	return m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
+}
+
+func (m *ManagerStruct) DeleteInteraction(acc types.LoginData, pairId string) bool {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filterPair := bson.D{{"id", pairId}}
+	filterUser := bson.D{{"id", acc.Id	}}
+	updatePair := bson.D{{"$pull", bson.D{{"liked_by", acc.Id}}},
+		{"$pull", bson.D{{"matches", acc.Id}}}}
+	updateUser := bson.D{{"$pull", bson.D{{"matches", pairId}}}}
+	opts := options.Update()
+
+	_, err := userCollection.UpdateOne(context.TODO(), filterPair, updatePair, opts)
+	if err != nil {
+		log.Errorf("Error deleting interactions for pair: %v", err)
+		return false
+	}
+	_, err = userCollection.UpdateOne(context.TODO(), filterUser, updateUser, opts)
+	if err != nil {
+		log.Errorf("Error deleting interactions for user: %v", err)
+		return false
+	}
+	return true
+}
+
+func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType string) (result []string, err error) {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	var filter bson.D
+
+	if actionType == "like" {
+		filter = bson.D{{"liked_by", acc.Id}}
+	} else if actionType == "look" {
+		filter = bson.D{{"looked_by", acc.Id}}
+	} else {
+		log.Errorf("Unknown action type to get interactions: %v", actionType)
+		return nil, fmt.Errorf("unknown action type to get interactions: %v", actionType)
+	}
+
+	projection := bson.M{"id": 1, "_id": 0}
+	opts := options.Find().SetProjection(projection)
+
+	cursor, err := userCollection.Find(context.TODO(), filter, opts)
+	if err != nil {
+		log.Errorf("Error pushing liked_by: %v", err)
+		return nil, fmt.Errorf("error quering interactions: %v", actionType)
+	}
+
+	if err := cursor.All(context.TODO(), &result); err != nil {
+		log.Errorf("Error getting liked users: %v", err)
+		return nil, fmt.Errorf("error reading interactions: %v", actionType)
+	}
+	return result, nil
 }
 
 func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {

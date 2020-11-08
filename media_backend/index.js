@@ -92,7 +92,7 @@ app.put("/avatar", function (req, res) {
     })
 })
 
-app.delete("/", function (req, res) {
+app.delete("/img", function (req, res) {
     const response = {
         status: false,
         data: 'error'

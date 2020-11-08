@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type FullUserData struct {
 	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
 	Email     string   `json:"email" bson:"email"`
@@ -12,6 +14,7 @@ type FullUserData struct {
 	Gender    string   `json:"gender" bson:"gender"`
 	Country   string   `json:"country" bson:"country"`
 	City      string   `json:"city" bson:"city"`
+	Bio      string   `json:"bio" bson:"bio"`
 	MaxDist   int      `json:"maxDist" bson:"max_dist"`
 	LookFor   string   `json:"lookFor" bson:"look_for"`
 	MinAge    int      `json:"minAge" bson:"min_age"`
@@ -23,6 +26,7 @@ type FullUserData struct {
 	Matches	[]string	`json:"matches" bson:"matches"`
 	TagIds	[]int64		`json:"-" bson:"tag_ids"`
 	Tags	[]string		`json:"tags" bson:"-"`
+	BannedUserIds	[]string	`json:"bannedUserIds,omitempty" bson:"banned_user_ids"`
 	GeoPosition Coordinates	`json:"position,omitempty"`
 }
 
@@ -55,6 +59,13 @@ type Message struct {
 	Date				int			`json:"date" bson:"date"`
 	State				int			`json:"state" bson:"state"`
 	Text				string		`json:"text" bson:"text"`
+}
+
+type Report struct {
+	Date	time.Time		`json:"date" bson:"date"`
+	Category	string		`json:"category" bson:"category"`
+	Complaint string		`json:"complaint" bson:"complaint"`
+	AuthorId	string	`json:"authorId" bson:"author_id"`
 }
 
 type VerifyRequest struct {

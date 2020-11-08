@@ -20,7 +20,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "incorrect user data")
 			return
 		}
-		userData, err := userDataStorage.Manager.GetFullUserData(user, false)
+		userData, err := userDataStorage.Manager.GetFullUserData(user, "full")
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")
@@ -35,7 +35,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func SaveAccountLookUpHandler(w http.ResponseWriter, r *http.Request) {
+func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		requestData, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -66,38 +66,35 @@ func SaveAccountLookUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func SaveLikeActionHandler(w http.ResponseWriter, r *http.Request) {
+func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
+	lookedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+	if !ok {
+		return
+	}
+
+	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
+	if err != nil {
+		log.Error("Session Id is invalid: ", err)
+		utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
+		return
+	}
+
 	if r.Method == http.MethodPost {
-		requestData, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Error("Can't read request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
-			return
-		}
-
-		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
-		if err != nil {
-			log.Error("Session Id is invalid: ", err)
-			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
-			return
-		}
-
-		lookedUserId := &types.LoginData{}
-		err = json.Unmarshal(requestData, &lookedUserId)
-		if err != nil {
-			log.Error("Can't parse request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
-			return
-		}
 		if userDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
+	} else if r.Method == http.MethodDelete {
+		if userDataStorage.Manager.DeleteInteraction(loginData, lookedUserId.Id) {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponse(w,"failed to delete interactions")
+		}
 	}
 }
 
-func SaveMatchHandler(w http.ResponseWriter, r *http.Request) {
+func MatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		requestData, err := ioutil.ReadAll(r.Body)
 		if err != nil {
