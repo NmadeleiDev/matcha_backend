@@ -116,6 +116,7 @@ func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
 		{"$set", bson.D{{"phone", user.Phone}}},
 		{"$set", bson.D{{"country", user.Country}}},
 		{"$set", bson.D{{"city", user.City}}},
+		{"$set", bson.D{{"bio", user.Bio}}},
 		{"$set", bson.D{{"max_dist", user.MaxDist}}},
 		{"$set", bson.D{{"look_for", user.LookFor}}},
 		{"$set", bson.D{{"min_age", user.MinAge}}},
