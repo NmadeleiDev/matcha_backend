@@ -106,6 +106,7 @@ app.delete("/img", function (req, res) {
     }
 
     mongoFuncs.deleteImageData(imageIds).then(result => {
+        console.log("Delete result: ", result)
         if (Array.isArray(result)) {
             response.data = 'success'
             response.status = true

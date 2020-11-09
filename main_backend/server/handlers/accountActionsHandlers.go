@@ -43,7 +43,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if structuredDataStorage.Manager.LoginUser(loginData) {
-			userData, err := userDataStorage.Manager.GetFullUserData(*loginData, "public")
+			userData, err := userDataStorage.Manager.GetFullUserData(*loginData, "private")
 			if err != nil {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")

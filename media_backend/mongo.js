@@ -71,8 +71,6 @@ async function insertImageData(data) {
     if (!insertedId) {
         return null
     }
-    console.log("Image data inserted: ", data, insertedId)
-
     if (typeof insertedId !== 'string') {
         console.log("Inserted id is not string!", typeof insertedId, insertedId, data)
         return null
@@ -130,7 +128,7 @@ async function getFileByDocumentId(id) {
 }
 
 async function deleteImagesIdFromUserImages(imageIds, userId) {
-    const update = {$pull: {images: {$in: imageIds}}}
+    const update = {images: {$pullAll: imageIds}}
 
     const userCollection = client.db("matcha").collection("users");
     try {
@@ -143,26 +141,29 @@ async function deleteImagesIdFromUserImages(imageIds, userId) {
 }
 
 async function deleteImageData(imageIds) {
-    let result
+    let result = null
 
     const collection = client.db("media").collection("images");
 
-    try {
-        result = await collection.find({ _id: { $in: [ imageIds.map(id => new mongo.ObjectID(id)) ] }})
-        if (!Array.isArray(result) || result.length <= 0) {
-            return null
-        }
-    } catch (e) {
-        console.log(e)
-        return null
-    }
+    collection.find({ _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }})
+        .toArray(async (err, items) => {
+            if (!Array.isArray(items) || err !== null) {
+                console.log("find error: ", err)
+                return null
+            }
+            if (items.length === 0)
+                return
 
-    const userId = result[0].id
+            console.log("Find res: ", result)
+            const userId = items[0].id
 
-    if (!await deleteImagesIdFromUserImages(result.map(item => item._id), userId))
-        return null
+            if (!await deleteImagesIdFromUserImages(items.map(item => item._id), userId))
+                return null
 
-    return result.map(item => item.filename)
+            return items.map(item => item.filename)
+        })
+    console.log("final res: ", result)
+    return result
 }
 
 exports.initConnection = initConnection;

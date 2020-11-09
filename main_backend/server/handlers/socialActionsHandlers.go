@@ -55,11 +55,11 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodGet {
-		likes, err := userDataStorage.Manager.GetPreviousInteractions(loginData, "like")
+		looks, err := userDataStorage.Manager.GetPreviousInteractions(loginData, "look")
 		if err != nil {
-			utils.SendDataResponse(w, likes)
+			utils.SendFailResponse(w,"failed to get looks")
 		} else {
-			utils.SendFailResponse(w,"failed to delete interactions")
+			utils.SendDataResponse(w, looks)
 		}
 	}
 }
@@ -92,9 +92,9 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == http.MethodGet {
 		likes, err := userDataStorage.Manager.GetPreviousInteractions(loginData, "like")
 		if err != nil {
-			utils.SendDataResponse(w, likes)
+			utils.SendFailResponse(w,"failed to get likes")
 		} else {
-			utils.SendFailResponse(w,"failed to delete interactions")
+			utils.SendDataResponse(w, likes)
 		}
 	}
 }

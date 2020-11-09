@@ -168,7 +168,7 @@ func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", likedId}}
-	update := bson.D{{"$push", bson.D{{"liked_by", likerId}}}}
+	update := bson.D{{"$addToSet", bson.D{{"liked_by", likerId}}}}
 	opts := options.Update()
 
 	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -211,6 +211,10 @@ func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType 
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
+	var container []struct {
+		Id string `bson:"id"`
+	}
+
 	var filter bson.D
 
 	if actionType == "like" {
@@ -231,9 +235,14 @@ func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType 
 		return nil, fmt.Errorf("error quering interactions: %v", actionType)
 	}
 
-	if err := cursor.All(context.TODO(), &result); err != nil {
+	if err := cursor.All(context.TODO(), &container); err != nil {
 		log.Errorf("Error getting liked users: %v", err)
 		return nil, fmt.Errorf("error reading interactions: %v", actionType)
+	}
+	log.Infof("got type '%v' container: %v", actionType, container)
+	result = make([]string, len(container))
+	for i, item := range container {
+		result[i] = item.Id
 	}
 	return result, nil
 }
@@ -244,7 +253,7 @@ func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", userId}}
-	update := bson.D{{"$push", bson.D{{"matched", matchedId}}}, {"$pull", bson.D{{"liked_by", matchedId}}}}
+	update := bson.D{{"$addToSet", bson.D{{"matched", matchedId}}}, {"$pull", bson.D{{"liked_by", matchedId}}}}
 	opts := options.FindOneAndUpdate()
 
 	err := userCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&user)
@@ -263,8 +272,9 @@ func (m *ManagerStruct) GetUserImages(id string) []string {
 		Images		[]string	`bson:"images"`
 	}{}
 
+	opts := options.FindOne().SetProjection(bson.M{"images": 1})
 	filter := bson.M{"id": id}
-	err := userCollection.FindOne(context.Background(),filter).Decode(&container)
+	err := userCollection.FindOne(context.Background(),filter,opts).Decode(&container)
 	if  err != nil {
 		log.Error("Error finding user document: ", err)
 		return container.Images
