@@ -72,6 +72,8 @@ func SendFailResponse(w http.ResponseWriter, text string) {
 	var err error
 
 	response := &types.ResponseJson{Status: false, Data: text}
+	w.Header().Set("content-type", "application/json")
+
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}
@@ -85,6 +87,8 @@ func SendSuccessResponse(w http.ResponseWriter) {
 	var err error
 
 	response := &types.ResponseJson{Status: true, Data: nil}
+	w.Header().Set("content-type", "application/json")
+
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}
@@ -98,6 +102,8 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 	var err error
 
 	response := &types.ResponseJson{Status: true, Data: data}
+	w.Header().Set("content-type", "application/json")
+
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)
 	}

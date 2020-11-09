@@ -15,12 +15,12 @@ func (m *ManagerStruct) CreateUser(userData *types.FullUserData) (string, bool) 
 INSERT INTO ` + userDataTable + `(email, password, id, session_key)
 VALUES ($1, $2, $3, $4)` // здесь session_key создается, чтобы авторизовать почту юзера
 
-	rawId := userData.Email + time.Now().String() + strconv.Itoa(rand.Int())
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.Password), hashCost)
 	if err != nil {
 		log.Error("Error hashing password", err)
 		return "", false
 	}
+	rawId := userData.Email + time.Now().String() + strconv.Itoa(rand.Int())
 
 	userData.Id = CalculateSha256(rawId)
 	key := CalculateSha256(userData.Id + strconv.Itoa(rand.Int()))
