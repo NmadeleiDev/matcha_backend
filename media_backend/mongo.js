@@ -10,6 +10,21 @@ var client
 
 console.log(dsn);
 
+function mongoFind(collection, findObj) {
+    return new Promise((resolve, reject) => {
+        collection.find(findObj)
+            .toArray(async (err, items) => {
+                if (!Array.isArray(items) || err !== null) {
+                    console.log("find error: ", err)
+                    reject(err)
+                    return
+                }
+                resolve(items)
+            })
+    })
+}
+
+
 async function initConnection() {
     try {
         const mongoClient = new mongo.MongoClient(dsn, { useUnifiedTopology: true, useNewUrlParser: true });
@@ -128,11 +143,14 @@ async function getFileByDocumentId(id) {
 }
 
 async function deleteImagesIdFromUserImages(imageIds, userId) {
-    const update = {images: {$pullAll: imageIds}}
+    const update = {$pullAll: {images: imageIds}}
 
     const userCollection = client.db("matcha").collection("users");
+
+    console.log("Updating: ", userId, update)
     try {
-        await userCollection.updateOne({id: userId}, update)
+        const res = await userCollection.updateOne({id: userId}, update)
+        // console.log("Update (delete images) res: ", res)
         return true
     } catch (e) {
         console.log(e)
@@ -141,29 +159,18 @@ async function deleteImagesIdFromUserImages(imageIds, userId) {
 }
 
 async function deleteImageData(imageIds) {
-    let result = null
-
     const collection = client.db("media").collection("images");
 
-    collection.find({ _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }})
-        .toArray(async (err, items) => {
-            if (!Array.isArray(items) || err !== null) {
-                console.log("find error: ", err)
-                return null
-            }
-            if (items.length === 0)
-                return
+    const items = await mongoFind(collection, { _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }})
+    if (items.length < 1)
+        return null
+    const userId = items[0].id
 
-            console.log("Find res: ", result)
-            const userId = items[0].id
+    if (!await deleteImagesIdFromUserImages(items.map(item => item._id), userId)) {
+        return null
+    }
 
-            if (!await deleteImagesIdFromUserImages(items.map(item => item._id), userId))
-                return null
-
-            return items.map(item => item.filename)
-        })
-    console.log("final res: ", result)
-    return result
+    return items.map(item => item.filename)
 }
 
 exports.initConnection = initConnection;

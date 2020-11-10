@@ -44,7 +44,7 @@ func (m *ManagerStruct) CreateUser(user types.FullUserData) bool {
 
 func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (types.FullUserData, error) {
 
-	var opts *options.FindOneOptions
+	opts := options.FindOne()
 
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
@@ -55,7 +55,7 @@ func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (t
 
 	if variant != "full" {
 		projection := bson.M{"banned_user_ids": 0}
-		opts = options.FindOne().SetProjection(projection)
+		opts.SetProjection(projection)
 	}
 
 	err := userCollection.FindOne(context.Background(), filter, opts).Decode(&container)
