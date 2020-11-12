@@ -3,6 +3,7 @@ package structuredDataStorage
 import (
 	"backend/types"
 	"crypto/md5"
+	"database/sql"
 	_ "database/sql"
 	"errors"
 	"fmt"
@@ -315,12 +316,20 @@ func (m *ManagerStruct) GetTagsById(ids []int64) (tags []string) {
 
 func (m *ManagerStruct) GetAllTags(limit, offset int) (tags []string) {
 	query := `SELECT value FROM ` + tagsTable + ` 
-		ORDER BY times_mentioned DESC
-		LIMIT $1 OFFSET $2`
+		ORDER BY times_mentioned DESC`
 
-	rows, err := m.Conn.Query(query, limit, offset)
+	var rows *sql.Rows
+	var err error
+
+	if limit > 0 && offset > 0 {
+		query += ` LIMIT $1 OFFSET $2`
+		rows, err = m.Conn.Query(query, limit, offset)
+	} else {
+		rows, err = m.Conn.Query(query)
+	}
+
 	if err != nil {
-		log.Errorf("Error finding tags by ids: %v", err)
+		log.Errorf("Error getting all tags: %v", err)
 		return nil
 	}
 	for rows.Next() {

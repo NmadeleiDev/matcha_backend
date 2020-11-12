@@ -100,7 +100,7 @@ func (m *ManagerStruct) GetFittingUsers(user types.FullUserData) (results []type
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	var filter bson.D
+	//var filter bson.D
 
 	nowIs := time.Now().Unix() * 1000
 	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
@@ -111,19 +111,30 @@ func (m *ManagerStruct) GetFittingUsers(user types.FullUserData) (results []type
 	log.Infof("Max  = %17v", maxStamp)
 	log.Infof("Min  = %17v", minStamp)
 
+	filter := bson.M{
+		"country": user.Country,
+		"city": user.City,
+		"$and": bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}},
+	}
+
+	if user.BannedUserIds != nil && len(user.BannedUserIds) > 0 {
+		filter["id"] = bson.M{"$nin": user.BannedUserIds}
+	}
+
 	if user.LookFor == "male" || user.LookFor == "female" {
-		filter = bson.D{
-			{"id", bson.M{"$nin": user.BannedUserIds}},
-			{"gender", user.LookFor},
-			{"country", user.Country},
-			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
+		//filter = bson.D{
+		//	{"id", bson.M{"$nin": user.BannedUserIds}},
+		//	{"gender", user.LookFor},
+		//	{"country", user.Country},
+		//	{"city", user.City},
+		//	{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
+		filter["gender"] = user.LookFor
 	} else {
-		filter = bson.D{
-			{"id", bson.M{"$nin": user.BannedUserIds}},
-			{"country", user.Country},
-			{"city", user.City},
-			{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
+		//filter = bson.D{
+		//	{"id", bson.M{"$nin": user.BannedUserIds}},
+		//	{"country", user.Country},
+		//	{"city", user.City},
+		//	{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 	}
 	cur, err := userCollection.Find(context.Background(), filter)
 	if  err != nil {

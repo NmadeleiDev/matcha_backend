@@ -174,11 +174,11 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 		utils.SendFailResponse(w, "incorrect session id")
 		return
 	}
-	tags, ok := utils.UnmarshalHttpBodyToTags(w, r)
-	if !ok {
-		return
-	}
 	if r.Method == http.MethodPut {
+		tags, ok := utils.UnmarshalHttpBodyToTags(w, r)
+		if !ok {
+			return
+		}
 		failedTags := make([]string, 0, len(tags.Tags))
 		for _, tag := range tags.Tags {
 			id, err := structuredDataStorage.Manager.IncOrInsertTag(tag)
@@ -195,6 +195,10 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to save tags: %v", failedTags))
 		}
 	} else if r.Method == http.MethodDelete {
+		tags, ok := utils.UnmarshalHttpBodyToTags(w, r)
+		if !ok {
+			return
+		}
 		failedTags := make([]string, 0, len(tags.Tags))
 		for _, tag := range tags.Tags {
 			id, err := structuredDataStorage.Manager.DecrTagByValue(tag)
