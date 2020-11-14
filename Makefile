@@ -13,6 +13,10 @@ help: ## Show this help
 
 f=cover.out
 
+
+git-push: ## full git push
+	git commit -am "$(m)" && git push
+
 build: ## build all containers (docker compose)
 	docker-compose build
 

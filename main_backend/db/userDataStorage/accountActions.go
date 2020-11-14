@@ -153,17 +153,21 @@ func (m *ManagerStruct) GetUserBannedList(acc types.LoginData) (result []string,
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
+	container := struct{
+		BannedUserIds	[]string	`bson:"banned_user_ids"`
+	}{}
+
 	filter := bson.M{"id": acc.Id}
 	projection := bson.M{"banned_user_ids": 1}
 	opts := options.FindOne().SetProjection(projection)
 
-	err = userCollection.FindOne(context.Background(), filter, opts).Decode(&result)
+	err = userCollection.FindOne(context.Background(), filter, opts).Decode(&container)
 	if err != nil {
 		log.Error("Error finding user document: ", err)
 		return nil, err
 	}
 
-	return result, nil
+	return container.BannedUserIds, nil
 }
 
 func (m *ManagerStruct) RemoveUserIdFromBanned(acc types.LoginData, bannedId string) bool {
