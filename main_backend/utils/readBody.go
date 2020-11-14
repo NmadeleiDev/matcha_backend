@@ -1,15 +1,15 @@
 package utils
 
 import (
-	"backend/types"
+	"backend/model"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
 
-func UnmarshalHttpBodyToUserData(w http.ResponseWriter, r *http.Request) (*types.FullUserData, bool) {
-	container := types.FullUserData{}
+func UnmarshalHttpBodyToUserData(w http.ResponseWriter, r *http.Request) (*model.FullUserData, bool) {
+	container := model.FullUserData{}
 	requestData, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Error("Can't read request body: ", err)
@@ -25,8 +25,8 @@ func UnmarshalHttpBodyToUserData(w http.ResponseWriter, r *http.Request) (*types
 	return &container, true
 }
 
-func UnmarshalHttpBodyToLoginData(w http.ResponseWriter, r *http.Request) (*types.LoginData, bool) {
-	container := types.LoginData{}
+func UnmarshalHttpBodyToLoginData(w http.ResponseWriter, r *http.Request) (*model.LoginData, bool) {
+	container := model.LoginData{}
 	requestData, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Error("Can't read request body: ", err)
@@ -42,8 +42,8 @@ func UnmarshalHttpBodyToLoginData(w http.ResponseWriter, r *http.Request) (*type
 	return &container, true
 }
 
-func UnmarshalHttpBodyToTags(w http.ResponseWriter, r *http.Request) (*types.Tags, bool) {
-	container := types.Tags{}
+func UnmarshalHttpBodyToTags(w http.ResponseWriter, r *http.Request) (*model.Tags, bool) {
+	container := model.Tags{}
 	requestData, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Error("Can't read request body: ", err)

@@ -3,7 +3,7 @@ package handlers
 import (
 	"backend/db/structuredDataStorage"
 	"backend/db/userDataStorage"
-	"backend/types"
+	"backend/model"
 	"backend/utils"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
@@ -115,7 +115,7 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user2Data := &types.LoginData{}
+		user2Data := &model.LoginData{}
 		err = json.Unmarshal(requestData, &user2Data)
 		if err != nil {
 			log.Error("Can't parse request body for login: ", err)
@@ -126,6 +126,45 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save matched to db.")
+		}
+	}
+}
+
+func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
+	session := utils.GetCookieValue(r, "session_id")
+	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	if err != nil {
+		utils.SendFailResponse(w, "incorrect session id")
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		bans, err := userDataStorage.Manager.GetUserBannedList(data)
+		if err != nil {
+			log.Errorf("Error getting banned users: %v", err)
+			utils.SendFailResponse(w, "Error getting banned users")
+			return
+		}
+		utils.SendDataResponse(w, bans)
+	} else if r.Method == http.MethodPost {
+		bannedLoginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
+		if ok := userDataStorage.Manager.AddUserIdToBanned(data, bannedLoginData.Id); !ok {
+			utils.SendFailResponse(w, "Failed to ban user")
+		} else {
+			utils.SendSuccessResponse(w)
+		}
+	} else if r.Method == http.MethodDelete {
+		bannedLoginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
+		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(data, bannedLoginData.Id); !ok {
+			utils.SendFailResponse(w, "Failed to remove user form banned")
+		} else {
+			utils.SendSuccessResponse(w)
 		}
 	}
 }

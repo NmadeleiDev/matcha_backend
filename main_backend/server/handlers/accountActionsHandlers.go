@@ -4,7 +4,7 @@ import (
 	"backend/db/structuredDataStorage"
 	"backend/db/userDataStorage"
 	"backend/emails"
-	"backend/types"
+	"backend/model"
 	"backend/utils"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -23,6 +23,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 		authKey, ok := structuredDataStorage.Manager.CreateUser(userData)
 		if !ok {
+			utils.SendFailResponse(w, "User already exists")
 			return
 		}
 
@@ -37,13 +38,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		loginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
 		if !ok {
 			return
 		}
 		if structuredDataStorage.Manager.LoginUser(loginData) {
-			userData, err := userDataStorage.Manager.GetFullUserData(*loginData, "private")
+			userData, err := utils.GetFullUserData(*loginData, false)
 			if err != nil {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
@@ -130,6 +131,11 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 	session := utils.GetCookieValue(r,"session_id")
+	if len(session) == 0 {
+		utils.SendFailResponse(w, "incorrect session id")
+		return
+	}
+
 	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		utils.SendFailResponse(w, "incorrect session id")
@@ -235,9 +241,9 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if isShortData {
-			userData, err = userDataStorage.Manager.GetShortUserData(types.LoginData{Id: id})
+			userData, err = userDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
-			userData, err = utils.GetFullUserData(types.LoginData{Id: id}, true)
+			userData, err = utils.GetFullUserData(model.LoginData{Id: id}, true)
 		}
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
@@ -265,45 +271,6 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		utils.SendDataResponse(w, actions)
-	}
-}
-
-func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
-	session := utils.GetCookieValue(r, "session_id")
-	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-	if err != nil {
-		utils.SendFailResponse(w, "incorrect session id")
-		return
-	}
-
-	if r.Method == http.MethodGet {
-		bans, err := userDataStorage.Manager.GetUserBannedList(data)
-		if err != nil {
-			log.Errorf("Error getting banned users: %v", err)
-			utils.SendFailResponse(w, "Error getting banned users")
-			return
-		}
-		utils.SendDataResponse(w, bans)
-	} else if r.Method == http.MethodPost {
-		bannedLoginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
-		if !ok {
-			return
-		}
-		if ok := userDataStorage.Manager.AddUserIdToBanned(data, bannedLoginData.Id); !ok {
-			utils.SendFailResponse(w, "Failed to ban user")
-		} else {
-			utils.SendSuccessResponse(w)
-		}
-	} else if r.Method == http.MethodDelete {
-		bannedLoginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
-		if !ok {
-			return
-		}
-		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(data, bannedLoginData.Id); !ok {
-			utils.SendFailResponse(w, "Failed to remove user form banned")
-		} else {
-			utils.SendSuccessResponse(w)
-		}
 	}
 }
 

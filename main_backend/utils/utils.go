@@ -3,18 +3,19 @@ package utils
 import (
 	"backend/db/structuredDataStorage"
 	"backend/db/userDataStorage"
-	"backend/types"
+	"backend/model"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"reflect"
+
 )
 
 const (
 	oneDayInSeconds = 86400
 )
 
-func GetFullUserData(loginData types.LoginData, isPublic bool) (types.FullUserData, error) {
+func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error) {
 	var variant string
 
 	if isPublic {
@@ -25,14 +26,32 @@ func GetFullUserData(loginData types.LoginData, isPublic bool) (types.FullUserDa
 	userData, err := userDataStorage.Manager.GetFullUserData(loginData, variant)
 	if err != nil {
 		log.Error("Failed to get user data")
-		return types.FullUserData{}, err
+		return model.FullUserData{}, err
 	} else {
+		if userData.BannedUserIds == nil {
+			userData.BannedUserIds = []string{}
+		}
+		if userData.LikedBy == nil {
+			userData.LikedBy = []string{}
+		}
+		if userData.LookedBy == nil {
+			userData.LookedBy = []string{}
+		}
+		if userData.Matches == nil {
+			userData.Matches = []string{}
+		}
+		if userData.Tags == nil {
+			userData.Tags = []string{}
+		}
+		if userData.Images == nil {
+			userData.Images = []string{}
+		}
 		userData.Tags = structuredDataStorage.Manager.GetTagsById(userData.TagIds)
 		return userData, nil
 	}
 }
 
-func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user types.LoginData) bool {
+func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData) bool {
 	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)
 
 	if err != nil {
@@ -59,10 +78,10 @@ func SetCookie(w http.ResponseWriter, cookieName, value string) {
 func GetCookieValue(r *http.Request, cookieName string) string {
 	cookie, err := r.Cookie(cookieName)
 	if err != nil {
-		log.Println("Failed getting cookie", err)
+		log.Info("Failed getting cookie: ", err)
 		return ""
 	} else {
-		log.Println("Got cookie: ", cookie)
+		log.Info("Got cookie: ", cookie)
 	}
 	return cookie.Value
 }
@@ -71,7 +90,7 @@ func SendFailResponse(w http.ResponseWriter, text string) {
 	var packet []byte
 	var err error
 
-	response := &types.ResponseJson{Status: false, Data: text}
+	response := &model.ResponseJson{Status: false, Data: text}
 	w.Header().Set("content-type", "application/json")
 
 	if packet, err = json.Marshal(response); err != nil {
@@ -86,7 +105,7 @@ func SendSuccessResponse(w http.ResponseWriter) {
 	var packet []byte
 	var err error
 
-	response := &types.ResponseJson{Status: true, Data: nil}
+	response := &model.ResponseJson{Status: true, Data: nil}
 	w.Header().Set("content-type", "application/json")
 
 	if packet, err = json.Marshal(response); err != nil {
@@ -101,7 +120,7 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 	var packet []byte
 	var err error
 
-	response := &types.ResponseJson{Status: true, Data: data}
+	response := &model.ResponseJson{Status: true, Data: data}
 	w.Header().Set("content-type", "application/json")
 
 	if packet, err = json.Marshal(response); err != nil {

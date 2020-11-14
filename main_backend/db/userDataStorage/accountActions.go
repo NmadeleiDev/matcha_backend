@@ -1,7 +1,7 @@
 package userDataStorage
 
 import (
-	"backend/types"
+	"backend/model"
 	"context"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -9,7 +9,7 @@ import (
 	"math/rand"
 )
 
-func (m *ManagerStruct) CreateUser(user types.FullUserData) bool {
+func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -42,8 +42,7 @@ func (m *ManagerStruct) CreateUser(user types.FullUserData) bool {
 	return true
 }
 
-func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (types.FullUserData, error) {
-
+func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (model.FullUserData, error) {
 	opts := options.FindOne()
 
 	database := m.Conn.Database(mainDBName)
@@ -51,7 +50,7 @@ func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (t
 
 	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
-	container := types.FullUserData{}
+	container := model.FullUserData{}
 
 	if variant != "full" {
 		projection := bson.M{"banned_user_ids": 0}
@@ -61,7 +60,7 @@ func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (t
 	err := userCollection.FindOne(context.Background(), filter, opts).Decode(&container)
 	if err != nil {
 		log.Error("Error finding user document: ", err)
-		return types.FullUserData{}, err
+		return model.FullUserData{}, err
 	}
 
 	if variant == "public" {
@@ -77,18 +76,18 @@ func (m *ManagerStruct) GetFullUserData(user types.LoginData, variant string) (t
 	return container, nil
 }
 
-func (m *ManagerStruct) GetShortUserData(user types.LoginData) (types.ShortUserData, error) {
+func (m *ManagerStruct) GetShortUserData(user model.LoginData) (model.ShortUserData, error) {
 
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
-	container := types.ShortUserData{}
+	container := model.ShortUserData{}
 	err := userCollection.FindOne(context.Background(), filter).Decode(&container)
 	if err != nil {
 		log.Error("Error finding user document: ", err)
-		return types.ShortUserData{}, err
+		return model.ShortUserData{}, err
 	} else {
 		log.Infof("Got user document: %v; avatar = %v", container, container.Avatar)
 	}
@@ -100,7 +99,7 @@ func (m *ManagerStruct) GetShortUserData(user types.LoginData) (types.ShortUserD
 	return container, nil
 }
 
-func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
+func (m *ManagerStruct) UpdateUser(user model.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -135,21 +134,22 @@ func (m *ManagerStruct) UpdateUser(user types.FullUserData) bool {
 	return true
 }
 
-func (m *ManagerStruct) AddUserIdToBanned(acc types.LoginData, bannedId string) bool {
+func (m *ManagerStruct) AddUserIdToBanned(acc model.LoginData, bannedId string) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.M{"id": acc.Id}
-	update := bson.D{{"$addToSet", bson.D{{"banned_user_ids", bannedId}}}}
-	_, err := userCollection.UpdateOne(context.Background(), filter, update)
+	update := bson.D{{"$addToSet", bson.M{"banned_user_ids": bannedId}}}
+	res, err := userCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		log.Error("Error updating user document (ban user): ", err)
 		return false
 	}
+	log.Infof("Ban res: %v", res)
 	return true
 }
 
-func (m *ManagerStruct) GetUserBannedList(acc types.LoginData) (result []string, err error) {
+func (m *ManagerStruct) GetUserBannedList(acc model.LoginData) (result []string, err error) {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -170,7 +170,7 @@ func (m *ManagerStruct) GetUserBannedList(acc types.LoginData) (result []string,
 	return container.BannedUserIds, nil
 }
 
-func (m *ManagerStruct) RemoveUserIdFromBanned(acc types.LoginData, bannedId string) bool {
+func (m *ManagerStruct) RemoveUserIdFromBanned(acc model.LoginData, bannedId string) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -184,7 +184,7 @@ func (m *ManagerStruct) RemoveUserIdFromBanned(acc types.LoginData, bannedId str
 	return true
 }
 
-func (m *ManagerStruct) DeleteAccount(acc types.LoginData) error {
+func (m *ManagerStruct) DeleteAccount(acc model.LoginData) error {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 

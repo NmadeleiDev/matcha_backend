@@ -1,8 +1,8 @@
 package structuredDataStorage
 
-import "backend/types"
+import "backend/model"
 
-var Manager types.StructuredDataStorage
+var Manager model.StructuredDataStorage
 
 func Init() {
 	postgres := ManagerStruct{}

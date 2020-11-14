@@ -1,7 +1,7 @@
 package structuredDataStorage
 
 import (
-	"backend/types"
+	"backend/model"
 	"crypto/md5"
 	"database/sql"
 	_ "database/sql"
@@ -112,7 +112,7 @@ func (m *ManagerStruct) InitTables() {
 	}
 }
 
-func (m *ManagerStruct) SaveMessage(message types.Message) bool {
+func (m *ManagerStruct) SaveMessage(message model.Message) bool {
 	query := `
 INSERT INTO ` + messagesTable + ` (sender, recipient, date, text) 
 VALUES (?, ?, ?, ?)`
@@ -163,7 +163,7 @@ WHERE id=$2`
 	return true
 }
 
-func (m *ManagerStruct) GetUserEmailBySession(sessionKey string) (user types.LoginData, err error) {
+func (m *ManagerStruct) GetUserEmailBySession(sessionKey string) (user model.LoginData, err error) {
 
 	query := `
 SELECT email
@@ -175,7 +175,7 @@ WHERE session_key=$1`
 	return user, err
 }
 
-func (m *ManagerStruct) GetUserLoginDataBySession(sessionKey string) (user types.LoginData, err error) {
+func (m *ManagerStruct) GetUserLoginDataBySession(sessionKey string) (user model.LoginData, err error) {
 	query := `
 SELECT id
 FROM ` + userDataTable + ` 
@@ -215,7 +215,7 @@ WHERE session_key=$1`
 	return newSessionKey, true
 }
 
-func (m *ManagerStruct) IssueUserSessionKey(user types.LoginData) (string, error) {
+func (m *ManagerStruct) IssueUserSessionKey(user model.LoginData) (string, error) {
 	var truePassword string
 	var state int
 

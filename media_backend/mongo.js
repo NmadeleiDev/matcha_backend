@@ -35,7 +35,7 @@ async function initConnection() {
     } finally {
         console.log("All good");
     }
-    // return client;
+    // return wsClient;
 }
 
 async function closeConnection() {

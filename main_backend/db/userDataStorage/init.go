@@ -1,8 +1,8 @@
 package userDataStorage
 
-import "backend/types"
+import "backend/model"
 
-var Manager types.UserDataStorage
+var Manager model.UserDataStorage
 
 func Init() {
 	Manager = &ManagerStruct{}

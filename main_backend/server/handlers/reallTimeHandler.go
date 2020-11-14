@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"backend/client"
-	"backend/types"
+	"backend/db/structuredDataStorage"
+	"backend/wsClient"
+	"backend/model"
 	"backend/utils"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -24,10 +25,17 @@ var upgrader = websocket.Upgrader{
 
 func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
 	log.Info("Managing websocket")
-	id, ok := utils.IdentifyUserBySession(r)
-	if !ok {
+	//id, ok := utils.IdentifyUserBySession(r)
+	//if !ok {
+	//	return
+	//}
+	session := r.URL.Query().Get("key")
+	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	if err != nil {
+		log.Errorf("Error find user: %v", err)
 		return
 	}
+	id := data.Id
 
 	connection, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -36,9 +44,9 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	user := &types.FullUserData{Id: id}
+	user := &model.FullUserData{Id: id}
 
-	clientStruct := client.RegisterNewClient(connection, user)
+	clientStruct := wsClient.RegisterNewClient(connection, user)
 	go clientStruct.ReadHub()
 	go clientStruct.WriteHub()
 }

@@ -1,16 +1,18 @@
 package userDataStorage
 
 import (
-	"backend/types"
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"os"
+	"time"
+
+	"backend/model"
+
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"os"
-	"time"
 )
 
 const userDataCollection = "users"
@@ -33,32 +35,32 @@ func (m *ManagerStruct) MakeConnection() {
 	addr := os.Getenv("MONGO_ADDRESS")
 
 	if user == "" || password == "" || addr == "" {
-		log.Error("Env is empty", user, password, addr)
+		logrus.Error("Env is empty", user, password, addr)
 	}
 
 	connStr := fmt.Sprintf("mongodb://%v:%v@%v", user, password, addr)
-	log.Info("Connecting to mongo: ", connStr)
+	logrus.Info("Connecting to mongo: ", connStr)
 	opts := options.Client().ApplyURI(connStr)
 	m.Conn, err = mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		log.Fatal("Error getting mongo client: ", err)
+		logrus.Fatal("Error getting mongo wsClient: ", err)
 	}
 	if err != nil {
-		log.Fatal("Error connecting to mongo: ", err)
+		logrus.Fatal("Error connecting to mongo: ", err)
 	}
 	if err = m.Conn.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal("Error pinging: ", err)
+		logrus.Fatal("Error pinging: ", err)
 	}
-	log.Info("Connected.")
+	logrus.Info("Connected.")
 }
 
 func (m *ManagerStruct) CloseConnection() {
 	if err := m.Conn.Disconnect(context.TODO()); err != nil {
-		log.Error("Error closing mongo: ", err)
+		logrus.Error("Error closing mongo: ", err)
 	}
 }
 
-func (m *ManagerStruct) AddTagToUserTags(user types.LoginData, tagId int64) bool {
+func (m *ManagerStruct) AddTagToUserTags(user model.LoginData, tagId int64) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -67,17 +69,17 @@ func (m *ManagerStruct) AddTagToUserTags(user types.LoginData, tagId int64) bool
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
 	if  err != nil {
-		log.Error("Error updating user document: ", err)
+		logrus.Error("Error updating user document: ", err)
 		return false
 	}
 	if res.MatchedCount != 1 {
-		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		logrus.Error("Error find user document (res.MatchedCount != 1): ", err)
 		return false
 	}
 	return true
 }
 
-func (m *ManagerStruct) DeleteTagFromUserTags(user types.LoginData, tagId int64) bool {
+func (m *ManagerStruct) DeleteTagFromUserTags(user model.LoginData, tagId int64) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -86,73 +88,58 @@ func (m *ManagerStruct) DeleteTagFromUserTags(user types.LoginData, tagId int64)
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
 	if  err != nil {
-		log.Error("Error updating user document: ", err)
+		logrus.Error("Error updating user document: ", err)
 		return false
 	}
 	if res.MatchedCount != 1 {
-		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		logrus.Error("Error find user document (res.MatchedCount != 1): ", err)
 		return false
 	}
 	return true
 }
 
-func (m *ManagerStruct) GetFittingUsers(user types.FullUserData) (results []types.FullUserData, ok bool) {
+func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []model.FullUserData, ok bool) {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
-
-	//var filter bson.D
 
 	nowIs := time.Now().Unix() * 1000
 	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
 	maxStamp := nowIs - int64(user.MaxAge * yearInMilisecs)
 
-	log.Infof("Now  = %17v", nowIs)
-	log.Infof("User = %17v", user.BirthDate)
-	log.Infof("Max  = %17v", maxStamp)
-	log.Infof("Min  = %17v", minStamp)
+	//logrus.Infof("Now  = %17v", nowIs)
+	//logrus.Infof("User = %17v", user.BirthDate)
+	//logrus.Infof("Max  = %17v", maxStamp)
+	//logrus.Infof("Min  = %17v", minStamp)
+
+	user.BannedUserIds = append(user.BannedUserIds, user.Id)
 
 	filter := bson.M{
+		"id": bson.M{"$nin": user.BannedUserIds},
 		"country": user.Country,
 		"city": user.City,
 		"$and": bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}},
 	}
-
-	if user.BannedUserIds != nil && len(user.BannedUserIds) > 0 {
-		filter["id"] = bson.M{"$nin": user.BannedUserIds}
-	}
-
 	if user.LookFor == "male" || user.LookFor == "female" {
-		//filter = bson.D{
-		//	{"id", bson.M{"$nin": user.BannedUserIds}},
-		//	{"gender", user.LookFor},
-		//	{"country", user.Country},
-		//	{"city", user.City},
-		//	{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 		filter["gender"] = user.LookFor
-	} else {
-		//filter = bson.D{
-		//	{"id", bson.M{"$nin": user.BannedUserIds}},
-		//	{"country", user.Country},
-		//	{"city", user.City},
-		//	{"$and",  bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}}}}
 	}
+
 	cur, err := userCollection.Find(context.Background(), filter)
 	if  err != nil {
-		log.Error("Error finding user document: ", err)
+		logrus.Error("Error finding user document: ", err)
 		return nil, false
 	}
 	defer cur.Close(context.Background())
 
 	for cur.Next(context.Background()) {
-		container := types.FullUserData{}
+		container := model.FullUserData{}
 		err := cur.Decode(&container)
 		if err != nil {
-			log.Error("Error decoding user: ", err)
+			logrus.Error("Error decoding user: ", err)
 		}
 		results = append(results, container)
 	}
 	if err := cur.Err(); err != nil {
-		log.Error("Error in mongo cursor: ", err)
+		logrus.Error("Error in mongo cursor: ", err)
 	}
 
 	return results, true
@@ -168,7 +155,7 @@ func (m *ManagerStruct) SaveLooked(lookedId, lookerId string) bool {
 
 	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		log.Errorf("Error pushing looked_by: %v", err)
+		logrus.Errorf("Error pushing looked_by: %v", err)
 		return false
 	}
 	return true
@@ -184,7 +171,7 @@ func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
 
 	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		log.Errorf("Error pushing liked_by: %v", err)
+		logrus.Errorf("Error pushing liked_by: %v", err)
 		return false
 	}
 	return true
@@ -194,7 +181,7 @@ func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
 	return m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
 }
 
-func (m *ManagerStruct) DeleteInteraction(acc types.LoginData, pairId string) bool {
+func (m *ManagerStruct) DeleteInteraction(acc model.LoginData, pairId string) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -207,18 +194,18 @@ func (m *ManagerStruct) DeleteInteraction(acc types.LoginData, pairId string) bo
 
 	_, err := userCollection.UpdateOne(context.TODO(), filterPair, updatePair, opts)
 	if err != nil {
-		log.Errorf("Error deleting interactions for pair: %v", err)
+		logrus.Errorf("Error deleting interactions for pair: %v", err)
 		return false
 	}
 	_, err = userCollection.UpdateOne(context.TODO(), filterUser, updateUser, opts)
 	if err != nil {
-		log.Errorf("Error deleting interactions for user: %v", err)
+		logrus.Errorf("Error deleting interactions for user: %v", err)
 		return false
 	}
 	return true
 }
 
-func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType string) (result []string, err error) {
+func (m *ManagerStruct) GetPreviousInteractions(acc model.LoginData, actionType string) (result []string, err error) {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -233,7 +220,7 @@ func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType 
 	} else if actionType == "look" {
 		filter = bson.D{{"looked_by", acc.Id}}
 	} else {
-		log.Errorf("Unknown action type to get interactions: %v", actionType)
+		logrus.Errorf("Unknown action type to get interactions: %v", actionType)
 		return nil, fmt.Errorf("unknown action type to get interactions: %v", actionType)
 	}
 
@@ -242,15 +229,15 @@ func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType 
 
 	cursor, err := userCollection.Find(context.TODO(), filter, opts)
 	if err != nil {
-		log.Errorf("Error pushing liked_by: %v", err)
+		logrus.Errorf("Error pushing liked_by: %v", err)
 		return nil, fmt.Errorf("error quering interactions: %v", actionType)
 	}
 
 	if err := cursor.All(context.TODO(), &container); err != nil {
-		log.Errorf("Error getting liked users: %v", err)
+		logrus.Errorf("Error getting liked users: %v", err)
 		return nil, fmt.Errorf("error reading interactions: %v", actionType)
 	}
-	log.Infof("got type '%v' container: %v", actionType, container)
+	logrus.Infof("got type '%v' container: %v", actionType, container)
 	result = make([]string, len(container))
 	for i, item := range container {
 		result[i] = item.Id
@@ -259,7 +246,7 @@ func (m *ManagerStruct) GetPreviousInteractions(acc types.LoginData, actionType 
 }
 
 func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
-	user := types.FullUserData{}
+	user := model.FullUserData{}
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
@@ -269,7 +256,7 @@ func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
 
 	err := userCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&user)
 	if err != nil {
-		log.Errorf("Error pushing liked_by: %v", err)
+		logrus.Errorf("Error pushing liked_by: %v", err)
 		return false
 	}
 	return true
@@ -287,10 +274,10 @@ func (m *ManagerStruct) GetUserImages(id string) []string {
 	filter := bson.M{"id": id}
 	err := userCollection.FindOne(context.Background(),filter,opts).Decode(&container)
 	if  err != nil {
-		log.Error("Error finding user document: ", err)
+		logrus.Error("Error finding user document: ", err)
 		return container.Images
 	} else {
-		log.Info("Got user images: ", container)
+		logrus.Info("Got user images: ", container)
 	}
 
 	return container.Images
