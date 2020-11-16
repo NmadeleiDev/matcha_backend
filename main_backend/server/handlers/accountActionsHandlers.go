@@ -59,35 +59,6 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func UpdateAccountHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		userData, ok := utils.UnmarshalHttpBodyToUserData(w, r)
-		if !ok {
-			return
-		}
-
-		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
-		if err != nil {
-			log.Error("Can't get user is: ", err)
-			utils.SendFailResponse(w, "Session cookie not present")
-			return
-		}
-
-		if userData.Id != loginData.Id {
-			log.Warn("request body id does not match session_id id")
-			utils.SendFailResponse(w, "id is incorrect")
-			structuredDataStorage.Manager.SetSessionKeyById("", loginData.Id)
-			return
-		}
-
-		if !userDataStorage.Manager.UpdateUser(*userData) {
-			utils.SendFailResponse(w, "failed to update user")
-			return
-		}
-		utils.SendSuccessResponse(w)
-	}
-}
-
 func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 	key := mux.Vars(r)["key"]
 
@@ -149,6 +120,25 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendDataResponse(w, userData)
 			return
 		}
+	} else if r.Method == http.MethodPut {
+		userData, ok := utils.UnmarshalHttpBodyToUserData(w, r)
+		if !ok {
+			return
+		}
+
+		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
+		if err != nil {
+			log.Error("Can't get user is: ", err)
+			utils.SendFailResponse(w, "Session cookie not present")
+			return
+		}
+
+		userData.Id = loginData.Id
+		if !userDataStorage.Manager.UpdateUser(*userData) {
+			utils.SendFailResponse(w, "failed to update user")
+			return
+		}
+		utils.SendSuccessResponse(w)
 	} else if r.Method == http.MethodDelete {
 		userData, err := userDataStorage.Manager.GetFullUserData(loginData, "public")
 		if err != nil {

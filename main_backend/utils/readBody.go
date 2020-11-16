@@ -58,3 +58,21 @@ func UnmarshalHttpBodyToTags(w http.ResponseWriter, r *http.Request) (*model.Tag
 	}
 	return &container, true
 }
+
+func UnmarshalHttpBodyToChat(w http.ResponseWriter, r *http.Request) (*model.Chat, bool) {
+	container := model.Chat{}
+	requestData, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logrus.Error("Can't read request body: ", err)
+		SendFailResponse(w, "error reading body")
+		return nil, false
+	}
+	err = json.Unmarshal(requestData, &container)
+	if err != nil {
+		logrus.Error("Can't read request body: ", err)
+		SendFailResponse(w, "error reading body")
+		return nil, false
+	}
+	return &container, true
+}
+

@@ -5,6 +5,7 @@ import (
 
 	"backend/hash"
 	"backend/model"
+	"backend/utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -13,7 +14,7 @@ type chatsManager struct {
 	Chats []*model.Chat
 }
 
-func (c *chatsManager) GetChat(chatId string) *model.Chat {
+func (c *chatsManager) FindChat(chatId string) *model.Chat {
 	for _, chat := range c.Chats {
 		if chat.Id == chatId {
 			return chat
@@ -22,7 +23,16 @@ func (c *chatsManager) GetChat(chatId string) *model.Chat {
 	return nil
 }
 
-func (c *chatsManager) CreateChat(chat model.Chat) {
+func (c *chatsManager) GetUserChats(userId string) (result []*model.Chat) {
+	for _, chat := range c.Chats {
+		if utils.DoesArrayContain(chat.UserIds, userId) {
+			result = append(result, chat)
+		}
+	}
+	return result
+}
+
+func (c *chatsManager) CreateChat(chat model.Chat) string {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("Recovered in CreateChat. Chat: %v; clients: %v", chat, Clients)
@@ -40,6 +50,7 @@ func (c *chatsManager) CreateChat(chat model.Chat) {
 		}
 	}
 	log.Infof("Created chat: %v", chat)
+	return chat.Id
 }
 
 func (c *chatsManager) ConnectToChat(chatId string) {
@@ -47,7 +58,7 @@ func (c *chatsManager) ConnectToChat(chatId string) {
 }
 
 func (c *chatsManager) SendMessageToChat(chatId string, message model.Message) {
-	chat := c.GetChat(chatId)
+	chat := c.FindChat(chatId)
 	if chat == nil {
 		log.Errorf("Not sent message. Failed to find chat: %v", chatId)
 		return

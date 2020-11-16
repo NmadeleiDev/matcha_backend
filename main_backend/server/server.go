@@ -1,10 +1,12 @@
 package server
 
 import (
+	"net/http"
+
 	"backend/server/handlers"
+
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 func StartServer(port string) {
@@ -14,7 +16,6 @@ func StartServer(port string) {
 	router.HandleFunc("/signup", handlers.SignUpHandler)
 	router.HandleFunc("/signin", handlers.SignInHandler)
 	router.HandleFunc("/signout", handlers.SignOutHandler)
-	router.HandleFunc("/user", handlers.UpdateAccountHandler)
 	router.HandleFunc("/verify/{key}", handlers.VerifyAccountHandler)
 
 	router.HandleFunc("/account", handlers.ManageOwnAccountHandler)
@@ -33,6 +34,9 @@ func StartServer(port string) {
 	router.HandleFunc("/match", handlers.MatchHandler)
 
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
+
+	router.HandleFunc("/chat", handlers.ManagerChatsHandler)
+	router.HandleFunc("/chat/{chat_id}", handlers.ManagerChatsHandler)
 
 	log.Info("Listening ", port)
 	if err := http.ListenAndServe(":"+port, router); err != nil {

@@ -53,8 +53,9 @@ type StructuredDataStorage interface {
 }
 
 type WsDataManager interface {
-	CreateChat(chat Chat)
-	GetChat(chatId string) *Chat
+	CreateChat(chat Chat) string
+	FindChat(chatId string) *Chat
+	GetUserChats(userId string) []*Chat
 	ConnectToChat(chatId string)
 	SendMessageToChat(chatId string, message Message)
 	AddUserToChat(userId string, chat Chat)
