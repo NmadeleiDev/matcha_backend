@@ -1,26 +1,25 @@
 package handlers
 
 import (
-	"backend/db/structuredDataStorage"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
 	"backend/db/userDataStorage"
 	"backend/model"
 	"backend/utils"
-	"encoding/json"
+
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
 )
 
 func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		session := utils.GetCookieValue(r, "session_id")
-		user, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-		if err != nil {
-			log.Error("Failed to get user data by session")
-			utils.SendFailResponse(w, "incorrect user data")
+		user := utils.AuthUserBySessionId(w, r)
+		if user == nil {
 			return
 		}
-		userData, err := userDataStorage.Manager.GetFullUserData(user, "full")
+
+		userData, err := userDataStorage.Manager.GetFullUserData(*user, "full")
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")
@@ -41,10 +40,8 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
-	if err != nil {
-		log.Error("Session Id is invalid: ", err)
-		utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
+	loginData := utils.AuthUserBySessionId(w, r)
+	if loginData == nil {
 		return
 	}
 
@@ -55,7 +52,7 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodGet {
-		looks, err := userDataStorage.Manager.GetPreviousInteractions(loginData, "look")
+		looks, err := userDataStorage.Manager.GetPreviousInteractions(*loginData, "look")
 		if err != nil {
 			utils.SendFailResponse(w,"failed to get looks")
 		} else {
@@ -70,10 +67,8 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
-	if err != nil {
-		log.Error("Session Id is invalid: ", err)
-		utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
+	loginData := utils.AuthUserBySessionId(w, r)
+	if loginData == nil {
 		return
 	}
 
@@ -84,13 +79,13 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodDelete {
-		if userDataStorage.Manager.DeleteInteraction(loginData, lookedUserId.Id) {
+		if userDataStorage.Manager.DeleteInteraction(*loginData, lookedUserId.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to delete interactions")
 		}
 	} else if r.Method == http.MethodGet {
-		likes, err := userDataStorage.Manager.GetPreviousInteractions(loginData, "like")
+		likes, err := userDataStorage.Manager.GetPreviousInteractions(*loginData, "like")
 		if err != nil {
 			utils.SendFailResponse(w,"failed to get likes")
 		} else {
@@ -108,10 +103,8 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user1Data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
-		if err != nil {
-			log.Error("Session Id is invalid: ", err)
-			utils.SendFailResponse(w, "Your session ID is invalid, try to refresh the page.")
+		user1Data := utils.AuthUserBySessionId(w, r)
+		if user1Data == nil {
 			return
 		}
 
@@ -131,15 +124,13 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
-	session := utils.GetCookieValue(r, "session_id")
-	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-	if err != nil {
-		utils.SendFailResponse(w, "incorrect session id")
+	data := utils.AuthUserBySessionId(w, r)
+	if data == nil {
 		return
 	}
 
 	if r.Method == http.MethodGet {
-		bans, err := userDataStorage.Manager.GetUserBannedList(data)
+		bans, err := userDataStorage.Manager.GetUserBannedList(*data)
 		if err != nil {
 			log.Errorf("Error getting banned users: %v", err)
 			utils.SendFailResponse(w, "Error getting banned users")
@@ -151,7 +142,7 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if ok := userDataStorage.Manager.AddUserIdToBanned(data, bannedLoginData.Id); !ok {
+		if ok := userDataStorage.Manager.AddUserIdToBanned(*data, bannedLoginData.Id); !ok {
 			utils.SendFailResponse(w, "Failed to ban user")
 		} else {
 			utils.SendSuccessResponse(w)
@@ -161,7 +152,7 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(data, bannedLoginData.Id); !ok {
+		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(*data, bannedLoginData.Id); !ok {
 			utils.SendFailResponse(w, "Failed to remove user form banned")
 		} else {
 			utils.SendSuccessResponse(w)

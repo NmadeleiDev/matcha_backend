@@ -164,10 +164,8 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
-	session := utils.GetCookieValue(r,"session_id")
-	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-	if err != nil && r.Method != http.MethodGet {
-		utils.SendFailResponse(w, "incorrect session id")
+	loginData := utils.AuthUserBySessionId(w, r)
+	if loginData == nil {
 		return
 	}
 	if r.Method == http.MethodPut {
@@ -181,7 +179,7 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				failedTags = append(failedTags, tag)
 			} else {
-				userDataStorage.Manager.AddTagToUserTags(loginData, id)
+				userDataStorage.Manager.AddTagToUserTags(*loginData, id)
 			}
 		}
 
@@ -198,7 +196,7 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 		failedTags := make([]string, 0, len(tags.Tags))
 		for _, tag := range tags.Tags {
 			id, err := structuredDataStorage.Manager.DecrTagByValue(tag)
-			ok := userDataStorage.Manager.DeleteTagFromUserTags(loginData, id)
+			ok := userDataStorage.Manager.DeleteTagFromUserTags(*loginData, id)
 			if err != nil || !ok {
 				failedTags = append(failedTags, tag)
 			}
@@ -221,15 +219,15 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		var userData interface{}
+		var err error
+
 		id := mux.Vars(r)["id"]
 		isShortData := r.URL.Query().Get("full") == "false"
 
-		session := utils.GetCookieValue(r,"session_id")
-		_, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-		if err != nil {
-			utils.SendFailResponse(w, "incorrect session id")
+		if utils.AuthUserBySessionId(w, r) == nil {
 			return
 		}
+
 		if isShortData {
 			userData, err = userDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
@@ -248,14 +246,12 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		action := mux.Vars(r)["action"]
 
-		session := utils.GetCookieValue(r, "session_id")
-		data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-		if err != nil {
-			utils.SendFailResponse(w, "incorrect session id")
+		data := utils.AuthUserBySessionId(w, r)
+		if data == nil {
 			return
 		}
 
-		actions, err := userDataStorage.Manager.GetPreviousInteractions(data, action)
+		actions, err := userDataStorage.Manager.GetPreviousInteractions(*data, action)
 		if err != nil {
 			utils.SendFailResponse(w, err.Error())
 			return
@@ -266,10 +262,8 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetUserOwnImagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		session := utils.GetCookieValue(r, "session_id")
-		data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
-		if err != nil {
-			utils.SendFailResponse(w, "incorrect session id")
+		data := utils.AuthUserBySessionId(w, r)
+		if data == nil {
 			return
 		}
 		utils.SendDataResponse(w, userDataStorage.Manager.GetUserImages(data.Id))

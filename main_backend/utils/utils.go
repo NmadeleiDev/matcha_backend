@@ -53,7 +53,6 @@ func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserDa
 
 func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData) bool {
 	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)
-
 	if err != nil {
 		log.Errorf("Error refreshing cookie: %v", err)
 		SendFailResponse(w, "incorrect user data")
@@ -62,6 +61,22 @@ func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData)
 
 	SetCookie(w, "session_id", sessionKey)
 	return true
+}
+
+func AuthUserBySessionId(w http.ResponseWriter, r *http.Request) *model.LoginData {
+	session := GetCookieValue(r, "session_id")
+	if len(session) != 32 {
+		SendFailResponse(w, "session key is incorrect")
+		return nil
+	}
+
+	user, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	if err != nil {
+		log.Error("Failed to get user data by session")
+		SendFailResponse(w, "incorrect user data")
+		return nil
+	}
+	return &user
 }
 
 func SetCookie(w http.ResponseWriter, cookieName, value string) {
@@ -92,6 +107,7 @@ func SendFailResponse(w http.ResponseWriter, text string) {
 
 	response := &model.ResponseJson{Status: false, Data: text}
 	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
 
 	if packet, err = json.Marshal(response); err != nil {
 		log.Error("Error marshalling response: ", err)

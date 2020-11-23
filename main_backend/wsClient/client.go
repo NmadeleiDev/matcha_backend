@@ -32,9 +32,11 @@ type Client struct {
 	ReadMessageChan chan model.SocketMessage
 }
 
-func	RegisterNewClient(connection *websocket.Conn, user *model.FullUserData) (client *Client) {
+func	RegisterNewClient(connection *websocket.Conn, user *model.LoginData) (client *Client) {
 	client = &Client{Id: user.Id, Connection: connection, ReadMessageChan:make(chan model.SocketMessage), IsOnline: true}
 	Clients[user.Id] = client
+
+	logrus.Infof("Registered client %v successfully", user.Id)
 	return client
 }
 
@@ -50,12 +52,4 @@ func GetWsMessageType(message []byte) int {
 	return dest.MessageType
 }
 
-func	SendMessageToClient(message model.SocketMessage) {
-	Clients[message.ToChat].ReadMessageChan <- message
-	//for _, id := range message.ToChat {
-	//	if Clients[id] != nil && Clients[id].IsOnline {
-	//		Clients[id].ReadMessageChan <- message
-	//	}
-	//}
-}
 
