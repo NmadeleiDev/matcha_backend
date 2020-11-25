@@ -1,12 +1,13 @@
 package wsClient
 
 import (
-	"backend/db/structuredDataStorage"
-	"backend/model"
 	"encoding/json"
+	"time"
+
+	"backend/model"
+
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -51,7 +52,7 @@ func	(client *Client) ReadHub() {
 		messageType := GetWsMessageType(message)
 		if messageType < 1 {
 			log.Errorf("Invalid message type: %v", messageType)
-			client.ReadMessageChan <- model.SocketMessage{ToChat: "fuck", MessageType: 7, Payload: message}
+			client.ReadMessageChan <- model.SocketMessage{MessageType: 7, Payload: message}
 			continue
 		}
 
@@ -65,11 +66,14 @@ func	(client *Client) ReadHub() {
 			}
 			switch messageType {
 			case InsertMessage:
-				structuredDataStorage.Manager.SaveMessage(userMessage.Payload)
+				GetManager().SendMessageToChat(userMessage.Payload)
+				//structuredDataStorage.Manager.SaveMessage(userMessage.Payload)
 			case UpdateMessage:
-				structuredDataStorage.Manager.UpdateMessageState(userMessage.Payload.Id, userMessage.Payload.State)
+				GetManager().UpdateMessageToChat(userMessage.Payload)
+				//structuredDataStorage.Manager.UpdateMessageState(userMessage.Payload.Id, userMessage.Payload.State)
 			case DeleteMessage:
-				structuredDataStorage.Manager.DeleteMessage(userMessage.Payload.Id)
+				GetManager().DeleteMessageFromChat(userMessage.Payload)
+				//structuredDataStorage.Manager.DeleteMessage(userMessage.Payload.Id)
 			default:
 				log.Warnf("Unknown message type: %v", messageType)
 				continue
@@ -84,6 +88,5 @@ func	(client *Client) ReadHub() {
 			}
 			GetManager().CreateChat(newChat.Payload)
 		}
-		log.Info("Got message in read hub: ", message)
 	}
 }

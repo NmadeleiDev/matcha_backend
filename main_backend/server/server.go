@@ -22,6 +22,7 @@ func StartServer(port string) {
 	router.HandleFunc("/actions/{action}", handlers.GetOwnActionsHandler)
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
 	router.HandleFunc("/ban", handlers.ManageBannedUsersHandler)
+	router.HandleFunc("/ban/{id}", handlers.ManageBannedUsersHandler)
 
 	router.HandleFunc("/tag", handlers.UserTagsHandler)
 

@@ -68,6 +68,7 @@ type Message struct {
 	Id					string		`json:"id" bson:"id"`
 	Sender				string		`json:"sender" bson:"sender"`
 	Recipient				string		`json:"recipient" bson:"recipient"`
+	ChatId				string		`json:"chatId" bson:"chat_id"`
 	Date				int			`json:"date" bson:"date"`
 	State				int			`json:"state" bson:"state"`
 	Text				string		`json:"text" bson:"text"`

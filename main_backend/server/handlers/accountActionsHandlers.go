@@ -156,6 +156,10 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete user account metadata: %v", err))
 			return
 		}
+		if err := userDataStorage.Manager.DeleteAccountRecordsFromOtherUsers(loginData); err != nil {
+			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete records from other users accounts: %v", err))
+			return
+		}
 		emails.Manager.SendGoodbyeMessage(userData.Email)
 		log.Infof("Deleted %v", userData.Email)
 

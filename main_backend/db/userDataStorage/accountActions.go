@@ -188,10 +188,24 @@ func (m *ManagerStruct) DeleteAccount(acc model.LoginData) error {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	filter := bson.M{"id": acc.Id}
+	filterDelete := bson.M{"id": acc.Id}
 
-	if _, err := userCollection.DeleteOne(context.TODO(), filter); err != nil {
+	if _, err := userCollection.DeleteOne(context.TODO(), filterDelete); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (m *ManagerStruct) DeleteAccountRecordsFromOtherUsers(acc model.LoginData) error {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	update := bson.M{"$pull": bson.M{"liked_by": acc.Id, "looked_by": acc.Id, "matches": acc.Id}}
+
+	if _, err := userCollection.UpdateMany(context.TODO(), bson.M{}, update); err != nil {
+		return err
+	}
+
 	return nil
 }

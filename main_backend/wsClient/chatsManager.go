@@ -14,6 +14,89 @@ type chatsManager struct {
 	Chats []*model.Chat
 }
 
+
+func (c *chatsManager) SendMessageToChat(message model.Message) {
+	log.Infof("Send message: %v, chatId: %v", message, message.ChatId)
+	chat := c.FindChat(message.ChatId)
+	if chat == nil {
+		log.Errorf("Not sent message. Failed to find chat: %v; chats: %v", message.ChatId, c.Chats)
+		return
+	}
+
+	if len(chat.UserIds) != 2 {
+		log.Errorf("Not sent message. Chat is incorrect (not 2 members): %v", chat)
+		return
+	}
+	message.State = 2
+	chat.Messages = append(chat.Messages, message)
+
+	wsMessage := model.SocketMessage{MessageType: 1, Payload: message}
+	for _, id := range chat.UserIds {
+		if recipient, exists := Clients[id]; recipient != nil && exists {
+			recipient.ReadMessageChan <- wsMessage
+		} else {
+			log.Warnf("Message recipient is not online. Id = %v", message.Recipient)
+		}
+	}
+}
+
+func (c *chatsManager) UpdateMessageToChat(message model.Message) {
+	chat := c.FindChat(message.ChatId)
+	if chat == nil {
+		log.Errorf("Not sent message. Failed to find chat: %v", message.ChatId)
+		return
+	}
+
+	if len(chat.UserIds) != 2 {
+		log.Errorf("Not sent message. Chat is incorrect (not 2 members): %v", chat)
+		return
+	}
+
+	for i, _ := range chat.Messages {
+		if chat.Messages[i].Id == message.Id {
+			chat.Messages[i].Text = message.Text
+		}
+	}
+
+	wsMessage := model.SocketMessage{MessageType: 2, Payload: message}
+	for _, id := range chat.UserIds {
+		if recipient, exists := Clients[id]; exists {
+			recipient.ReadMessageChan <- wsMessage
+		} else {
+			log.Warnf("Message recipient is not online. Id = %v", message.Recipient)
+		}
+	}
+}
+
+func (c *chatsManager) DeleteMessageFromChat(message model.Message) {
+	log.Infof("delete: %v", message)
+	//chat := c.FindChat(message.ChatId)
+	//if chat == nil {
+	//	log.Errorf("Not sent message. Failed to find chat: %v", message.ChatId)
+	//	return
+	//}
+	//
+	//if len(chat.UserIds) != 2 {
+	//	log.Errorf("Not sent message. Chat is incorrect (not 2 members): %v", chat)
+	//	return
+	//}
+	//
+	//for i, _ := range chat.Messages {
+	//	if chat.Messages[i].Id == message.Id {
+	//
+	//	}
+	//}
+	//
+	//wsMessage := model.SocketMessage{MessageType: 2, Payload: message}
+	//for _, id := range chat.UserIds {
+	//	if recipient, exists := Clients[id]; exists {
+	//		recipient.ReadMessageChan <- wsMessage
+	//	} else {
+	//		log.Warnf("Message recipient is not online. Id = %v", message.Recipient)
+	//	}
+	//}
+}
+
 func (c *chatsManager) FindChat(chatId string) *model.Chat {
 	for _, chat := range c.Chats {
 		if chat.Id == chatId {
@@ -35,17 +118,17 @@ func (c *chatsManager) GetUserChats(userId string) (result []*model.Chat) {
 func (c *chatsManager) CreateChat(chat model.Chat) string {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("Recovered in CreateChat. Chat: %v; clients: %v", chat, Clients)
+			log.Errorf("Recovered in CreateChat. Chat: %v; clients: %v; r = %v", chat, Clients, r)
 		}
 	}()
 	chat.Id = hash.CalculateSha256(time.Now().String() + chat.UserIds[0])
 
 	c.Chats = append(c.Chats, &chat)
 	for _, id := range chat.UserIds {
-		if client, exists := Clients[id]; exists {
-			client.ReadMessageChan <- model.SocketMessage{MessageType: 100, ToChat: chat.Id, Payload: chat}
+		if client, exists := Clients[id]; client != nil && exists {
+			client.ReadMessageChan <- model.SocketMessage{MessageType: 100, Payload: chat}
 		} else {
-			log.Infof("Client not exists: %v", id)
+			log.Infof("Client not exists or nil: %v", id)
 		}
 	}
 	log.Infof("Created chat: %v", chat)
@@ -54,31 +137,6 @@ func (c *chatsManager) CreateChat(chat model.Chat) string {
 
 func (c *chatsManager) ConnectToChat(chatId string) {
 	panic("implement me")
-}
-
-func (c *chatsManager) SendMessageToChat(chatId string, message model.Message) {
-	chat := c.FindChat(chatId)
-	if chat == nil {
-		log.Errorf("Not sent message. Failed to find chat: %v", chatId)
-		return
-	}
-
-	if len(chat.UserIds) != 2 {
-		log.Errorf("Not sent message. Chat is incorrect (not 2 members): %v", chat)
-		return
-	}
-
-	chat.Messages = append(chat.Messages, message)
-
-	wsMessage := model.SocketMessage{MessageType: 1, Payload: message, ToChat: chat.Id}
-	for _, id := range chat.UserIds {
-		if recipient, exists := Clients[id]; exists {
-			recipient.ReadMessageChan <- wsMessage
-		} else {
-			log.Warnf("Message recipient is not online. Id = %v", message.Recipient)
-		}
-	}
-
 }
 
 func (c *chatsManager) AddUserToChat(userId string, destChat model.Chat) {

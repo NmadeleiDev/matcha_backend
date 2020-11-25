@@ -9,6 +9,7 @@ import (
 	"backend/model"
 	"backend/utils"
 
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -148,11 +149,12 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendSuccessResponse(w)
 		}
 	} else if r.Method == http.MethodDelete {
-		bannedLoginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
-		if !ok {
+		idToUnban := mux.Vars(r)["id"]
+		if len(idToUnban) < 5 {
+			utils.SendFailResponse(w, "id is incorrect")
 			return
 		}
-		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(*data, bannedLoginData.Id); !ok {
+		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(*data, idToUnban); !ok {
 			utils.SendFailResponse(w, "Failed to remove user form banned")
 		} else {
 			utils.SendSuccessResponse(w)

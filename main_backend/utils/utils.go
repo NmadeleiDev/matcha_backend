@@ -96,7 +96,7 @@ func GetCookieValue(r *http.Request, cookieName string) string {
 		log.Info("Failed getting cookie: ", err)
 		return ""
 	} else {
-		log.Info("Got cookie: ", cookie)
+		//log.Info("Got cookie: ", cookie)
 	}
 	return cookie.Value
 }
@@ -183,3 +183,4 @@ func DoesArrayContain(haystack []string, needle string) bool {
 	}
 	return false
 }
+

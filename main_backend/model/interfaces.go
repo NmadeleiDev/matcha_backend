@@ -9,6 +9,7 @@ type UserDataStorage interface {
 	GetShortUserData(user LoginData) (ShortUserData, error)
 	UpdateUser(user FullUserData) bool
 	DeleteAccount(acc LoginData) error
+	DeleteAccountRecordsFromOtherUsers(acc LoginData) error
 
 	AddTagToUserTags(user LoginData, tagId int64) bool
 	DeleteTagFromUserTags(user LoginData, tagId int64) bool
@@ -57,7 +58,9 @@ type WsDataManager interface {
 	FindChat(chatId string) *Chat
 	GetUserChats(userId string) []*Chat
 	ConnectToChat(chatId string)
-	SendMessageToChat(chatId string, message Message)
+	SendMessageToChat(message Message)
+	UpdateMessageToChat(message Message)
+	DeleteMessageFromChat(message Message)
 	AddUserToChat(userId string, chat Chat)
 }
 
