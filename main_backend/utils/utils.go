@@ -100,7 +100,7 @@ func SetHttpOnlyCookie(w http.ResponseWriter, cookieName, value string) {
 		Path:  "/",
 		HttpOnly: true,
 		//Secure: true,
-		MaxAge: 3600}
+		MaxAge: 360000}
 	http.SetCookie(w, &c)
 }
 
