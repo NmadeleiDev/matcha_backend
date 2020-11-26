@@ -3,6 +3,7 @@ package emails
 import (
 	"backend/model"
 	log "github.com/sirupsen/logrus"
+	"fmt"
 	"net/smtp"
 	"os"
 )
@@ -11,6 +12,17 @@ type EmailManager struct {
 }
 
 var Manager model.EmailService = &EmailManager{}
+
+func (m *EmailManager) SendPasswordResetEmail(to, key string) {
+	template := `
+<div>
+    <h2>Password reset</h2>
+    <p>If you didn't request password reset for your Matcha account, just ignore this email.</p>
+    <p><a href="http://localhost:8080/reset?k=%s">Press here to reset password</a></p>
+</div>`
+	body := fmt.Sprintf(template, key)
+	m.sendEmailFromService(to, "Matcha password reset", body)
+}
 
 func (m *EmailManager) SendVerificationKey(to, key string) {
 	//link := "https://aim-love.ga/verify/" + key

@@ -22,6 +22,7 @@ import (
 
 const (
 	userDataTable = "user_data_schema.user_data"
+	passwordResetTable = "user_data_schema.password_reset"
 	tagsTable = "user_data_schema.tags"
 	messagesTable = "message_data_schema.messages"
 	hashCost      = 14
@@ -78,6 +79,19 @@ func (m *ManagerStruct) InitTables() {
     email varchar(128) unique,
     session_key   varchar(128) default NULL::character varying,
 	acc_state		integer default 2
+)`
+	if _, err := m.Conn.Exec(query); err != nil {
+		log.Fatal("Error creating table: ", err)
+	}
+
+	query = `create table if not exists ` + passwordResetTable + `
+(
+    user_id            varchar(256)       not null
+        constraint password_reset_pk
+            primary key,
+    key      varchar(128) not null,
+	state		integer default 0,
+	created_at		timestamp default now()::timestamp
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
 		log.Fatal("Error creating table: ", err)
@@ -173,6 +187,17 @@ WHERE session_key=$1`
 	row := m.Conn.QueryRow(query, sessionKey)
 	err = row.Scan(&user.Email)
 	return user, err
+}
+
+func (m *ManagerStruct) GetUserIdByEmail(email string) (id string, err error) {
+	query := `
+SELECT id
+FROM ` + userDataTable + ` 
+WHERE email=$1`
+
+	row := m.Conn.QueryRow(query, email)
+	err = row.Scan(&id)
+	return id, err
 }
 
 func (m *ManagerStruct) GetUserLoginDataBySession(sessionKey string) (user model.LoginData, err error) {

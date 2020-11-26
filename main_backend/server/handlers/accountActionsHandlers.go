@@ -4,6 +4,7 @@ import (
 	"backend/db/structuredDataStorage"
 	"backend/db/userDataStorage"
 	"backend/emails"
+	"backend/hash"
 	"backend/model"
 	"backend/utils"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +72,7 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	newSessionKey, ok := structuredDataStorage.Manager.VerifyUserAccountState(key)
 	if ok {
-		utils.SetCookie(w, "session_id", newSessionKey)
+		utils.SetCookieForDay(w, "session_id", newSessionKey)
 		login, err := structuredDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
@@ -84,6 +86,79 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		utils.SendFailResponse(w, "failed to verify user")
+	}
+}
+
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		var key string
+		userEmail, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
+
+		if randStr, err := utils.GenerateRandomString(10); err != nil {
+			log.Errorf("error generating rand str: %v", err)
+			utils.SendFailResponse(w, "Internal error")
+			return
+		} else {
+			key = hash.CalculateSha256(randStr + time.Now().String())
+		}
+
+		userId, err := structuredDataStorage.Manager.GetUserIdByEmail(userEmail.Email)
+		if err != nil {
+			log.Errorf("Error getting user id by email: %v", err)
+			utils.SendSuccessResponse(w) // тут специально отправляется успешный ответ, так как запросившему смену пароля не нужно знать, что этого меила не существует (защита от user enumeration)
+			return
+		}
+
+		if err := structuredDataStorage.Manager.CreateResetPasswordRecord(userId, key); err != nil {
+			log.Errorf("Error creating reset password lot: %v", err)
+			utils.SendFailResponse(w, "internal error")
+			return
+		}
+		emails.Manager.SendPasswordResetEmail(userEmail.Email, key)
+		utils.SendSuccessResponse(w)
+
+	} else if r.Method == http.MethodGet {
+		key := r.URL.Query().Get("k")
+		var newKey string
+		if len(key) != 64 {
+			utils.SendFailResponse(w, "Invalid key")
+			log.Infof("len = %v", len(key))
+			return
+		}
+		if randStr, err := utils.GenerateRandomString(5); err != nil {
+			log.Errorf("error generating rand str: %v", err)
+			utils.SendFailResponse(w, "Internal error")
+			return
+		} else {
+			newKey = hash.CalculateSha256(randStr + key + time.Now().String())
+		}
+
+		if err := structuredDataStorage.Manager.SetNextStepResetKey(key, newKey); err != nil {
+			utils.SendFailResponse(w, "Key is invalid")
+		} else {
+			utils.SetHttpOnlyCookie(w, "reset_key", newKey)
+			utils.SendSuccessResponse(w)
+		}
+	} else if r.Method == http.MethodPut {
+		newPassword, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
+
+		resetKey := utils.GetCookieValue(r, "reset_key")
+
+		if id, err := structuredDataStorage.Manager.GetAccountIdByResetKey(resetKey); err != nil {
+			utils.SendFailResponse(w, "Key is invalid")
+		} else {
+			if err1 := structuredDataStorage.Manager.SetNewPasswordForAccount(id, newPassword.Password); err1 != nil {
+				utils.SendFailResponse(w, "Password update error")
+			} else {
+				utils.SendSuccessResponse(w)
+			}
+		}
 	}
 }
 

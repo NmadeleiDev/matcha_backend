@@ -17,6 +17,7 @@ func StartServer(port string) {
 	router.HandleFunc("/signin", handlers.SignInHandler)
 	router.HandleFunc("/signout", handlers.SignOutHandler)
 	router.HandleFunc("/verify/{key}", handlers.VerifyAccountHandler)
+	router.HandleFunc("/reset", handlers.ResetPasswordHandler)
 
 	router.HandleFunc("/account", handlers.ManageOwnAccountHandler)
 	router.HandleFunc("/actions/{action}", handlers.GetOwnActionsHandler)

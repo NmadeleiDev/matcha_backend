@@ -1,14 +1,17 @@
 package utils
 
 import (
-	"backend/db/structuredDataStorage"
-	"backend/db/userDataStorage"
-	"backend/model"
+	"encoding/base64"
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"net/http"
 	"reflect"
 
+	"backend/db/structuredDataStorage"
+	"backend/db/userDataStorage"
+	"backend/model"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -59,7 +62,7 @@ func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData)
 		return false
 	}
 
-	SetCookie(w, "session_id", sessionKey)
+	SetCookieForDay(w, "session_id", sessionKey)
 	return true
 }
 
@@ -79,7 +82,7 @@ func AuthUserBySessionId(w http.ResponseWriter, r *http.Request) *model.LoginDat
 	return &user
 }
 
-func SetCookie(w http.ResponseWriter, cookieName, value string) {
+func SetCookieForDay(w http.ResponseWriter, cookieName, value string) {
 	c := http.Cookie{
 		Name:  cookieName,
 		Value: value,
@@ -87,6 +90,17 @@ func SetCookie(w http.ResponseWriter, cookieName, value string) {
 		//SameSite: http.SameSiteNoneMode,
 		//Secure: true,
 		MaxAge: oneDayInSeconds * 1}
+	http.SetCookie(w, &c)
+}
+
+func SetHttpOnlyCookie(w http.ResponseWriter, cookieName, value string) {
+	c := http.Cookie{
+		Name:  cookieName,
+		Value: value,
+		Path:  "/",
+		HttpOnly: true,
+		//Secure: true,
+		MaxAge: 3600}
 	http.SetCookie(w, &c)
 }
 
@@ -184,3 +198,16 @@ func DoesArrayContain(haystack []string, needle string) bool {
 	return false
 }
 
+func GenerateRandomBytes(n int) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func GenerateRandomString(s int) (string, error) {
+	b, err := GenerateRandomBytes(s)
+	return base64.URLEncoding.EncodeToString(b), err
+}

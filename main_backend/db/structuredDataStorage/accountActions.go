@@ -62,3 +62,44 @@ func (m *ManagerStruct) DeleteAccount(loginData model.LoginData) error {
 	return nil
 }
 
+func (m *ManagerStruct) CreateResetPasswordRecord(userId, key string) error {
+	query := `INSERT INTO ` + passwordResetTable + ` (user_id, key) VALUES ($1, $2)`
+	if _, err := m.Conn.Exec(query, userId, key); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ManagerStruct) SetNextStepResetKey(oldKey, newKey string) error {
+	query := `UPDATE ` + passwordResetTable + ` SET key=$1, state=1 WHERE key=$2 AND state=0`
+	if _, err := m.Conn.Exec(query, newKey, oldKey); err != nil {
+		log.Errorf("Error setting next step reset password key: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (m *ManagerStruct) SetNewPasswordForAccount(accountId string, newPassword string) error {
+	query := `UPDATE ` + userDataTable + ` SET password=$1, session_key='' WHERE id=$2`
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), hashCost)
+	if err != nil {
+		log.Error("Error hashing password", err)
+		return err
+	}
+
+	if _, err := m.Conn.Exec(query, passwordHash, accountId); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ManagerStruct) GetAccountIdByResetKey(key string) (id string, err error) {
+	query := `DELETE FROM ` + passwordResetTable + ` WHERE key=$1 AND state=1 RETURNING user_id`
+	if err := m.Conn.QueryRow(query, key).Scan(&id); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+

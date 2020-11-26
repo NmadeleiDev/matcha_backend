@@ -36,10 +36,16 @@ type StructuredDataStorage interface {
 
 	SetSessionKeyById(sessionKey string, id string) bool
 	GetUserEmailBySession(sessionKey string) (user LoginData, err error)
+	GetUserIdByEmail(email string) (id string, err error)
 	GetUserLoginDataBySession(sessionKey string) (user LoginData, err error)
 	VerifyUserAccountState(key string) (string, bool)
 	UpdateSessionKey(old, new string) bool
 	IssueUserSessionKey(user LoginData) (string, error)
+
+	CreateResetPasswordRecord(userId, key string) error
+	SetNextStepResetKey(oldKey, newKey string) error
+	GetAccountIdByResetKey(key string) (id string, err error)
+	SetNewPasswordForAccount(accountId string, newPassword string) error
 
 	IncOrInsertTag(tag string) (id int64, err error)
 	GetTagsById(ids []int64) (tags []string)
@@ -67,4 +73,5 @@ type WsDataManager interface {
 type EmailService interface {
 	SendVerificationKey(to, key string)
 	SendGoodbyeMessage(to string)
+	SendPasswordResetEmail(to, key string)
 }
