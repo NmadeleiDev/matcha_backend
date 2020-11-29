@@ -2,6 +2,7 @@ package wsClient
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"backend/model"
@@ -44,15 +45,10 @@ func	(client *Client) ReadHub() {
 			break
 		}
 
-		//if err := json.Unmarshal(message, &messageStruct); err != nil {
-		//	log.Error("Error unmarshal message: ", err, " Message: ", message)
-		//	client.ReadMessageChan <- model.SocketMessage{ToChat: "fuck", MessageType: 7, Payload: message}
-		//	continue
-		//}
 		messageType := GetWsMessageType(message)
 		if messageType < 1 {
 			log.Errorf("Invalid message type: %v", messageType)
-			client.ReadMessageChan <- model.SocketMessage{MessageType: 7, Payload: message}
+			client.ReadMessageChan <- model.SocketMessage{MessageType: 0, Payload: fmt.Sprintf("Invalid message type: %v", messageType)}
 			continue
 		}
 
