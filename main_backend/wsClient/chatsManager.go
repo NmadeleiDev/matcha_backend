@@ -40,7 +40,7 @@ func (c *chatsManager) SendMessageToChat(message model.Message) {
 	}
 }
 
-func (c *chatsManager) UpdateMessageToChat(message model.Message) {
+func (c *chatsManager) UpdateMessageInChat(message model.Message) {
 	chat := c.FindChat(message.ChatId)
 	if chat == nil {
 		log.Errorf("Not sent message. Failed to find chat: %v", message.ChatId)
@@ -55,12 +55,15 @@ func (c *chatsManager) UpdateMessageToChat(message model.Message) {
 	for i, _ := range chat.Messages {
 		if chat.Messages[i].Id == message.Id {
 			chat.Messages[i].Text = message.Text
+			if message.State > chat.Messages[i].State {
+				chat.Messages[i].State = message.State
+			}
 		}
 	}
 
 	wsMessage := model.SocketMessage{MessageType: 2, Payload: message}
 	for _, id := range chat.UserIds {
-		if recipient, exists := Clients[id]; exists {
+		if recipient, exists := Clients[id]; recipient.ReadMessageChan != nil && exists {
 			recipient.ReadMessageChan <- wsMessage
 		} else {
 			log.Warnf("Message recipient is not online. Id = %v", message.Recipient)

@@ -65,7 +65,7 @@ func	(client *Client) ReadHub() {
 				GetManager().SendMessageToChat(userMessage.Payload)
 				//structuredDataStorage.Manager.SaveMessage(userMessage.Payload)
 			case UpdateMessage:
-				GetManager().UpdateMessageToChat(userMessage.Payload)
+				GetManager().UpdateMessageInChat(userMessage.Payload)
 				//structuredDataStorage.Manager.UpdateMessageState(userMessage.Payload.Id, userMessage.Payload.State)
 			case DeleteMessage:
 				GetManager().DeleteMessageFromChat(userMessage.Payload)

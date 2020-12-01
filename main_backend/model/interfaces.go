@@ -65,7 +65,7 @@ type WsDataManager interface {
 	GetUserChats(userId string) []*Chat
 	ConnectToChat(chatId string)
 	SendMessageToChat(message Message)
-	UpdateMessageToChat(message Message)
+	UpdateMessageInChat(message Message)
 	DeleteMessageFromChat(message Message)
 	AddUserToChat(userId string, chat Chat)
 }
