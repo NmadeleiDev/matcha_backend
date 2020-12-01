@@ -63,7 +63,8 @@ func (m *ManagerStruct) DeleteAccount(loginData model.LoginData) error {
 }
 
 func (m *ManagerStruct) CreateResetPasswordRecord(userId, key string) error {
-	query := `INSERT INTO ` + passwordResetTable + ` (user_id, key) VALUES ($1, $2)`
+	query := `INSERT INTO ` + passwordResetTable + ` (user_id, key) VALUES ($1, $2)
+	ON CONFLICT (user_id) DO UPDATE SET key=$2, state=DEFAULT`
 	if _, err := m.Conn.Exec(query, userId, key); err != nil {
 		return err
 	}
