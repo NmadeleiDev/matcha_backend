@@ -1,7 +1,6 @@
 package main
 
 import (
-	"backend/wsClient"
 	"backend/db/userDataStorage"
 	"backend/db/structuredDataStorage"
 	"backend/server"
