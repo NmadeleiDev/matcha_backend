@@ -58,6 +58,7 @@ func	(client *Client) WriteHub() {
 				log.Error("Error writing ticker message to ws: ", err)
 				return
 			}
+			log.Info("Send ping message")
 		}
 	}
 }
