@@ -28,7 +28,7 @@ func	(client *Client) ReadHub() {
 		if err := client.Connection.Close(); err != nil {
 			log.Error("Error closing connection in read: ", err)
 		} else {
-			log.Info("Closed ws connection in read hub")
+			log.Infof("Closed ws connection in head hub: %v", client.Id)
 		}
 		log.Info("Exiting read hub")
 	}()

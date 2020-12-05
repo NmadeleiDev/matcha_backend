@@ -15,7 +15,7 @@ func	(client *Client) WriteHub() {
 		if err := client.Connection.Close(); err != nil {
 			log.Error("Error closing connection in write: ", err)
 		}
-		log.Info("Closed ws connection in write hub")
+		log.Infof("Closed ws connection in write hub: %v", client.Id)
 
 		close(client.ReadMessageChan)
 		Clients[client.Id] = nil
