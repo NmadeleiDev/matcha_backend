@@ -28,7 +28,7 @@ func	(client *Client) ReadHub() {
 		if err := client.Connection.Close(); err != nil {
 			log.Error("Error closing connection in read: ", err)
 		} else {
-			log.Info("Closed ws connection")
+			log.Info("Closed ws connection in read hub")
 		}
 		log.Info("Exiting read hub")
 	}()
@@ -42,6 +42,8 @@ func	(client *Client) ReadHub() {
 	for {
 		_, message, err := client.Connection.ReadMessage()
 		if err != nil {
+			log.Info("Exiting read hub after read message")
+
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Errorf("Unexpected error in ws: %v", err)
 			}
