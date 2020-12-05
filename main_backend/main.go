@@ -17,6 +17,5 @@ func main() {
 	defer structuredDataStorage.Manager.CloseConnection()
 	defer userDataStorage.Manager.CloseConnection()
 
-	wsClient.Clients = make(map[string]*wsClient.Client, 10000)
 	server.StartServer(port)
 }

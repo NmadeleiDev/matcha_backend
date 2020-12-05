@@ -2,6 +2,7 @@ package wsClient
 
 import (
 	"backend/model"
+
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
@@ -26,14 +27,18 @@ const (
 var Clients map[string]*Client
 
 type Client struct {
-	Id				string
-	IsOnline		bool
+	Id              string
+	IsOnline        bool
 	Connection      *websocket.Conn
 	ReadMessageChan chan model.SocketMessage
 }
 
-func	RegisterNewClient(connection *websocket.Conn, user *model.LoginData) (client *Client) {
-	client = &Client{Id: user.Id, Connection: connection, ReadMessageChan:make(chan model.SocketMessage), IsOnline: true}
+func init() {
+	Clients = make(map[string]*Client, 10000)
+}
+
+func RegisterNewClient(connection *websocket.Conn, user *model.LoginData) (client *Client) {
+	client = &Client{Id: user.Id, Connection: connection, ReadMessageChan: make(chan model.SocketMessage), IsOnline: true}
 	Clients[user.Id] = client
 
 	logrus.Infof("Registered client %v successfully", user.Id)
@@ -42,7 +47,7 @@ func	RegisterNewClient(connection *websocket.Conn, user *model.LoginData) (clien
 
 func GetWsMessageType(message []byte) int {
 	dest := struct {
-		MessageType int    `json:"messageType"`
+		MessageType int `json:"messageType"`
 	}{}
 
 	if err := json.Unmarshal(message, &dest); err != nil {
@@ -51,5 +56,3 @@ func GetWsMessageType(message []byte) int {
 	}
 	return dest.MessageType
 }
-
-
