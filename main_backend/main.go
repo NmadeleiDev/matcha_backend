@@ -1,10 +1,11 @@
 package main
 
 import (
-	"backend/db/userDataStorage"
-	"backend/db/structuredDataStorage"
-	"backend/server"
 	"os"
+
+	"backend/db/structuredDataStorage"
+	"backend/db/userDataStorage"
+	"backend/server"
 )
 
 func main() {

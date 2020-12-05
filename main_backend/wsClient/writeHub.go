@@ -21,7 +21,7 @@ func	(client *Client) WriteHub() {
 
 	for {
 		select {
-		case message := <- client.ReadMessageChan:
+		case message := <-client.ReadMessageChan:
 			err := client.Connection.SetWriteDeadline(time.Now().Add(writeWait))
 			if err != nil {
 				log.Error("Error setting write deadline: ", err)
@@ -45,7 +45,7 @@ func	(client *Client) WriteHub() {
 			if err = w.Close(); err != nil {
 				log.Error("Error closing writer: ", err)
 			}
-			log.Infof("Message %v sent.", message)
+			log.Info("Message is sent.")
 		case <-ticker.C:
 			err := client.Connection.SetWriteDeadline(time.Now().Add(writeWait))
 			if err != nil {

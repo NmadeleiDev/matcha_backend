@@ -28,6 +28,7 @@ func	(client *Client) ReadHub() {
 		if err := client.Connection.Close(); err != nil {
 			log.Error("Error closing connection in read: ", err)
 		}
+		log.Info("Connection closed")
 	}()
 
 	client.Connection.SetReadLimit(maxMessageSize)
@@ -40,7 +41,7 @@ func	(client *Client) ReadHub() {
 		_, message, err := client.Connection.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error: %v", err)
+				log.Errorf("Unexpected error in ws: %v", err)
 			}
 			break
 		}
