@@ -27,8 +27,10 @@ func	(client *Client) ReadHub() {
 	defer func() {
 		if err := client.Connection.Close(); err != nil {
 			log.Error("Error closing connection in read: ", err)
+		} else {
+			log.Info("Closed ws connection")
 		}
-		log.Info("Connection closed")
+		log.Info("Exiting read hub")
 	}()
 
 	client.Connection.SetReadLimit(maxMessageSize)
