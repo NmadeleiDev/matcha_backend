@@ -1,5 +1,5 @@
 import http from 'http';
-import socket from 'socket.io';
+import {Server} from 'socket.io';
 import express from 'express';
 import {registerSocketConn, sendChatCreationMessage} from "./socketUtils/socket";
 import {Chat} from "./model/model";
@@ -13,16 +13,21 @@ app.use(bodyParser.json())
 
 const server = http.createServer(app)
 
-const io = require('socket.io')({
-    path: '/connect',
-    serveClient: false
-  });
+const io = new Server(server,
+    {
+        path: '/test',
+        serveClient: false,
+        pingInterval: 10000,
+        pingTimeout: 5000,
+        cookie: false
+    }
+)
 
-io.attach(server, {
-    pingInterval: 10000,
-    pingTimeout: 5000,
-    cookie: false
-  });
+// io.attach(server, {
+//     pingInterval: 10000,
+//     pingTimeout: 5000,
+//     cookie: false
+//   });
 
 
 setHandlers(app)
