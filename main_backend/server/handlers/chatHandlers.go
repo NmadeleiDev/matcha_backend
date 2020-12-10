@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"backend/db/structuredDataStorage"
+	"backend/db/userMetaDataStorage"
 	"backend/utils"
 	"backend/wsClient"
 
@@ -15,7 +15,7 @@ import (
 func ManagerChatsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		session := utils.GetCookieValue(r, "session_id")
-		user, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+		user, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(session)
 		if err != nil {
 			log.Error("Failed to get user data by session")
 			utils.SendFailResponse(w, "incorrect user data")

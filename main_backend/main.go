@@ -3,19 +3,19 @@ package main
 import (
 	"os"
 
-	"backend/db/structuredDataStorage"
-	"backend/db/userDataStorage"
+	"backend/db/userMetaDataStorage"
+	"backend/db/userFullDataStorage"
 	"backend/server"
 )
 
 func main() {
 	port := os.Getenv("BACKEND_PORT")
 
-	structuredDataStorage.Init()
-	userDataStorage.Init()
+	userMetaDataStorage.Init()
+	userFullDataStorage.Init()
 
-	defer structuredDataStorage.Manager.CloseConnection()
-	defer userDataStorage.Manager.CloseConnection()
+	defer userMetaDataStorage.Manager.CloseConnection()
+	defer userFullDataStorage.Manager.CloseConnection()
 
 	server.StartServer(port)
 }

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"backend/db/structuredDataStorage"
-	"backend/db/userDataStorage"
+	"backend/db/userMetaDataStorage"
+	"backend/db/userFullDataStorage"
 	"backend/emails"
-	"backend/hash"
+	"backend/hashing"
 	"backend/model"
 	"backend/utils"
 	"fmt"
@@ -23,13 +23,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		authKey, ok := structuredDataStorage.Manager.CreateUser(userData)
+		authKey, ok := userMetaDataStorage.Manager.CreateUser(userData)
 		if !ok {
 			utils.SendFailResponse(w, "User already exists")
 			return
 		}
 
-		if !userDataStorage.Manager.CreateUser(*userData) {
+		if !userFullDataStorage.Manager.CreateUser(*userData) {
 			utils.SendFailResponse(w, "failed to create user")
 			return
 		}
@@ -45,7 +45,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if structuredDataStorage.Manager.LoginUser(loginData) {
+		if userMetaDataStorage.Manager.LoginUser(loginData) {
 			userData, err := utils.GetFullUserData(*loginData, false)
 			if err != nil {
 				log.Error("Failed to get user data")
@@ -70,14 +70,14 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSessionKey, ok := structuredDataStorage.Manager.VerifyUserAccountState(key)
+	newSessionKey, ok := userMetaDataStorage.Manager.VerifyUserAccountState(key)
 	if ok {
 		utils.SetCookieForDay(w, "session_id", newSessionKey)
-		login, err := structuredDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
+		login, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			data, err := userDataStorage.Manager.GetFullUserData(login, "public")
+			data, err := userFullDataStorage.Manager.GetFullUserData(login, "public")
 			if err != nil {
 				utils.SendFailResponse(w, "Failed to get user data")
 			} else {
@@ -102,17 +102,17 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "Internal error")
 			return
 		} else {
-			key = hash.CalculateSha256(randStr + time.Now().String())
+			key = hashing.CalculateSha256(randStr + time.Now().String())
 		}
 
-		userId, err := structuredDataStorage.Manager.GetUserIdByEmail(userEmail.Email)
+		userId, err := userMetaDataStorage.Manager.GetUserIdByEmail(userEmail.Email)
 		if err != nil {
 			log.Errorf("Error getting user id by email: %v", err)
 			utils.SendSuccessResponse(w) // тут специально отправляется успешный ответ, так как запросившему смену пароля не нужно знать, что этого меила не существует (защита от user enumeration)
 			return
 		}
 
-		if err := structuredDataStorage.Manager.CreateResetPasswordRecord(userId, key); err != nil {
+		if err := userMetaDataStorage.Manager.CreateResetPasswordRecord(userId, key); err != nil {
 			log.Errorf("Error creating reset password lot: %v", err)
 			utils.SendFailResponse(w, "internal error")
 			return
@@ -133,10 +133,10 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "Internal error")
 			return
 		} else {
-			newKey = hash.CalculateSha256(randStr + key + time.Now().String())
+			newKey = hashing.CalculateSha256(randStr + key + time.Now().String())
 		}
 
-		if err := structuredDataStorage.Manager.SetNextStepResetKey(key, newKey); err != nil {
+		if err := userMetaDataStorage.Manager.SetNextStepResetKey(key, newKey); err != nil {
 			utils.SendFailResponse(w, "Key is invalid")
 		} else {
 			utils.SetHttpOnlyCookie(w, "reset_key", newKey)
@@ -150,10 +150,10 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 		resetKey := utils.GetCookieValue(r, "reset_key")
 
-		if id, err := structuredDataStorage.Manager.GetAccountIdByResetKey(resetKey); err != nil {
+		if id, err := userMetaDataStorage.Manager.GetAccountIdByResetKey(resetKey); err != nil {
 			utils.SendFailResponse(w, "Key is invalid")
 		} else {
-			if err1 := structuredDataStorage.Manager.SetNewPasswordForAccount(id, newPassword.Password); err1 != nil {
+			if err1 := userMetaDataStorage.Manager.SetNewPasswordForAccount(id, newPassword.Password); err1 != nil {
 				utils.SendFailResponse(w, "Password update error")
 			} else {
 				utils.SendSuccessResponse(w)
@@ -166,7 +166,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodDelete {
 		session := utils.GetCookieValue(r,"session_id")
-		ok := structuredDataStorage.Manager.UpdateSessionKey(session, "")
+		ok := userMetaDataStorage.Manager.UpdateSessionKey(session, "")
 		if ok {
 			utils.SendSuccessResponse(w)
 		} else {
@@ -182,7 +182,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	loginData, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		utils.SendFailResponse(w, "incorrect session id")
 		return
@@ -201,7 +201,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		loginData, err := structuredDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
+		loginData, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(utils.GetCookieValue(r, "session_id"))
 		if err != nil {
 			log.Error("Can't get user is: ", err)
 			utils.SendFailResponse(w, "Session cookie not present")
@@ -209,29 +209,29 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userData.Id = loginData.Id
-		if !userDataStorage.Manager.UpdateUser(*userData) {
+		if !userFullDataStorage.Manager.UpdateUser(*userData) {
 			utils.SendFailResponse(w, "failed to update user")
 			return
 		}
 		utils.SendSuccessResponse(w)
 	} else if r.Method == http.MethodDelete {
-		userData, err := userDataStorage.Manager.GetFullUserData(loginData, "public")
+		userData, err := userFullDataStorage.Manager.GetFullUserData(loginData, "public")
 		if err != nil {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to get user data: %v", err))
 			return
 		}
 		for _, tagId := range userData.TagIds {
-			_ = structuredDataStorage.Manager.DecrTagById(tagId)
+			_ = userMetaDataStorage.Manager.DecrTagById(tagId)
 		}
-		if err := userDataStorage.Manager.DeleteAccount(loginData); err != nil {
+		if err := userFullDataStorage.Manager.DeleteAccount(loginData); err != nil {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete user data: %v", err))
 			return
 		}
-		if err := structuredDataStorage.Manager.DeleteAccount(loginData); err != nil {
+		if err := userMetaDataStorage.Manager.DeleteAccount(loginData); err != nil {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete user account metadata: %v", err))
 			return
 		}
-		if err := userDataStorage.Manager.DeleteAccountRecordsFromOtherUsers(loginData); err != nil {
+		if err := userFullDataStorage.Manager.DeleteAccountRecordsFromOtherUsers(loginData); err != nil {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete records from other users accounts: %v", err))
 			return
 		}
@@ -254,11 +254,11 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		failedTags := make([]string, 0, len(tags.Tags))
 		for _, tag := range tags.Tags {
-			id, err := structuredDataStorage.Manager.IncOrInsertTag(tag)
+			id, err := userMetaDataStorage.Manager.IncOrInsertTag(tag)
 			if err != nil {
 				failedTags = append(failedTags, tag)
 			} else {
-				userDataStorage.Manager.AddTagToUserTags(*loginData, id)
+				userFullDataStorage.Manager.AddTagToUserTags(*loginData, id)
 			}
 		}
 
@@ -274,13 +274,13 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		failedTags := make([]string, 0, len(tags.Tags))
 		for _, tag := range tags.Tags {
-			id, err := structuredDataStorage.Manager.DecrTagByValue(tag)
-			ok := userDataStorage.Manager.DeleteTagFromUserTags(*loginData, id)
+			id, err := userMetaDataStorage.Manager.DecrTagByValue(tag)
+			ok := userFullDataStorage.Manager.DeleteTagFromUserTags(*loginData, id)
 			if err != nil || !ok {
 				failedTags = append(failedTags, tag)
 			}
 		}
-		go structuredDataStorage.Manager.ClearUnmentionedTags()
+		go userMetaDataStorage.Manager.ClearUnmentionedTags()
 
 		if len(failedTags) == 0 {
 			utils.SendSuccessResponse(w)
@@ -291,7 +291,7 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-		utils.SendDataResponse(w, structuredDataStorage.Manager.GetAllTags(limit, offset))
+		utils.SendDataResponse(w, userMetaDataStorage.Manager.GetAllTags(limit, offset))
 	}
 }
 
@@ -308,7 +308,7 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isShortData {
-			userData, err = userDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
+			userData, err = userFullDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
 			userData, err = utils.GetFullUserData(model.LoginData{Id: id}, true)
 		}
@@ -330,7 +330,7 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		actions, err := userDataStorage.Manager.GetPreviousInteractions(*data, action)
+		actions, err := userFullDataStorage.Manager.GetPreviousInteractions(*data, action)
 		if err != nil {
 			utils.SendFailResponse(w, err.Error())
 			return
@@ -345,6 +345,6 @@ func GetUserOwnImagesHandler(w http.ResponseWriter, r *http.Request) {
 		if data == nil {
 			return
 		}
-		utils.SendDataResponse(w, userDataStorage.Manager.GetUserImages(data.Id))
+		utils.SendDataResponse(w, userFullDataStorage.Manager.GetUserImages(data.Id))
 	}
 }

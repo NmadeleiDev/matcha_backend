@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"reflect"
 
-	"backend/db/structuredDataStorage"
-	"backend/db/userDataStorage"
+	"backend/db/userMetaDataStorage"
+	"backend/db/userFullDataStorage"
 	"backend/model"
 
 	log "github.com/sirupsen/logrus"
@@ -26,7 +26,7 @@ func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserDa
 	} else {
 		variant = "private"
 	}
-	userData, err := userDataStorage.Manager.GetFullUserData(loginData, variant)
+	userData, err := userFullDataStorage.Manager.GetFullUserData(loginData, variant)
 	if err != nil {
 		log.Error("Failed to get user data")
 		return model.FullUserData{}, err
@@ -49,13 +49,13 @@ func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserDa
 		if userData.Images == nil {
 			userData.Images = []string{}
 		}
-		userData.Tags = structuredDataStorage.Manager.GetTagsById(userData.TagIds)
+		userData.Tags = userMetaDataStorage.Manager.GetTagsById(userData.TagIds)
 		return userData, nil
 	}
 }
 
 func RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData) bool {
-	sessionKey, err := structuredDataStorage.Manager.IssueUserSessionKey(user)
+	sessionKey, err := userMetaDataStorage.Manager.IssueUserSessionKey(user)
 	if err != nil {
 		log.Errorf("Error refreshing cookie: %v", err)
 		SendFailResponse(w, "incorrect user data")
@@ -73,7 +73,7 @@ func AuthUserBySessionId(w http.ResponseWriter, r *http.Request) *model.LoginDat
 		return nil
 	}
 
-	user, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	user, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		log.Error("Failed to get user data by session")
 		SendFailResponse(w, "incorrect user data")
@@ -163,7 +163,7 @@ func SendDataResponse(w http.ResponseWriter, data interface{}) {
 
 func IdentifyUserBySession(r *http.Request) (string, bool) {
 	session := GetCookieValue(r, "session_id")
-	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	data, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		return "", false
 	}

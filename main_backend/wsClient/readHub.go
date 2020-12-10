@@ -68,13 +68,13 @@ func	(client *Client) ReadHub() {
 			switch messageType {
 			case InsertMessage:
 				GetManager().SendMessageToChat(userMessage.Payload)
-				//structuredDataStorage.Manager.SaveMessage(userMessage.Payload)
+				//userMetaDataStorage.Manager.SaveMessage(userMessage.Payload)
 			case UpdateMessage:
 				GetManager().UpdateMessageInChat(userMessage.Payload)
-				//structuredDataStorage.Manager.UpdateMessageState(userMessage.Payload.Id, userMessage.Payload.State)
+				//userMetaDataStorage.Manager.UpdateMessageState(userMessage.Payload.Id, userMessage.Payload.State)
 			case DeleteMessage:
 				GetManager().DeleteMessageFromChat(userMessage.Payload)
-				//structuredDataStorage.Manager.DeleteMessage(userMessage.Payload.Id)
+				//userMetaDataStorage.Manager.DeleteMessage(userMessage.Payload.Id)
 			default:
 				log.Warnf("Unknown message type: %v", messageType)
 				continue

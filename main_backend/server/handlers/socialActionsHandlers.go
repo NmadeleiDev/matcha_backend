@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"backend/db/userDataStorage"
+	"backend/db/userFullDataStorage"
 	"backend/model"
 	"backend/utils"
 
@@ -20,13 +20,13 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userData, err := userDataStorage.Manager.GetFullUserData(*user, "full")
+		userData, err := userFullDataStorage.Manager.GetFullUserData(*user, "full")
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")
 			return
 		}
-		strangers, ok := userDataStorage.Manager.GetFittingUsers(userData)
+		strangers, ok := userFullDataStorage.Manager.GetFittingUsers(userData)
 		if ok {
 			utils.SendDataResponse(w, strangers)
 		} else {
@@ -47,13 +47,13 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		if userDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
+		if userFullDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodGet {
-		looks, err := userDataStorage.Manager.GetPreviousInteractions(*loginData, "look")
+		looks, err := userFullDataStorage.Manager.GetPreviousInteractions(*loginData, "look")
 		if err != nil {
 			utils.SendFailResponse(w,"failed to get looks")
 		} else {
@@ -74,19 +74,19 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		if userDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
+		if userFullDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodDelete {
-		if userDataStorage.Manager.DeleteInteraction(*loginData, lookedUserId.Id) {
+		if userFullDataStorage.Manager.DeleteInteraction(*loginData, lookedUserId.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to delete interactions")
 		}
 	} else if r.Method == http.MethodGet {
-		likes, err := userDataStorage.Manager.GetPreviousInteractions(*loginData, "like")
+		likes, err := userFullDataStorage.Manager.GetPreviousInteractions(*loginData, "like")
 		if err != nil {
 			utils.SendFailResponse(w,"failed to get likes")
 		} else {
@@ -116,7 +116,7 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "can't read request body")
 			return
 		}
-		if userDataStorage.Manager.SaveMatch(user1Data.Id, user2Data.Id) {
+		if userFullDataStorage.Manager.SaveMatch(user1Data.Id, user2Data.Id) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save matched to db.")
@@ -131,7 +131,7 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		bans, err := userDataStorage.Manager.GetUserBannedList(*data)
+		bans, err := userFullDataStorage.Manager.GetUserBannedList(*data)
 		if err != nil {
 			log.Errorf("Error getting banned users: %v", err)
 			utils.SendFailResponse(w, "Error getting banned users")
@@ -143,7 +143,7 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if ok := userDataStorage.Manager.AddUserIdToBanned(*data, bannedLoginData.Id); !ok {
+		if ok := userFullDataStorage.Manager.AddUserIdToBanned(*data, bannedLoginData.Id); !ok {
 			utils.SendFailResponse(w, "Failed to ban user")
 		} else {
 			utils.SendSuccessResponse(w)
@@ -154,7 +154,7 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "id is incorrect")
 			return
 		}
-		if ok := userDataStorage.Manager.RemoveUserIdFromBanned(*data, idToUnban); !ok {
+		if ok := userFullDataStorage.Manager.RemoveUserIdFromBanned(*data, idToUnban); !ok {
 			utils.SendFailResponse(w, "Failed to remove user form banned")
 		} else {
 			utils.SendSuccessResponse(w)

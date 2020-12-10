@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"backend/db/structuredDataStorage"
+	"backend/db/userMetaDataStorage"
 	"backend/utils"
 	"backend/wsClient"
 
@@ -27,7 +27,7 @@ var upgrader = websocket.Upgrader{
 func WebSocketHandler(w http.ResponseWriter, r *http.Request)  {
 	log.Info("Managing websocket")
 	session := r.URL.Query().Get("key")
-	data, err := structuredDataStorage.Manager.GetUserLoginDataBySession(session)
+	data, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(session)
 	if err != nil {
 		log.Errorf("Error find user: %v", err)
 		return

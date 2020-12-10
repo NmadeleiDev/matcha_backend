@@ -1,0 +1,32 @@
+{
+  "name": "chat_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "test",
+    "prestart": "npm run build",
+    "start": "tsc && node dist/app.js",
+    "start:watch": "tsc-watch --onSuccess \"npm run serve\"",
+    "serve": "node bin/index",
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "author": "greg",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "@types/redis": "^2.8.28",
+    "@types/uuid": "^8.3.0",
+    "body-parser": "^1.19.0",
+    "crypto": "^1.0.1",
+    "express": "^4.17.1",
+    "http": "0.0.1-security",
+    "redis": "^3.0.2",
+    "socket.io": "^3.0.3",
+    "typescript": "^4.1.2",
+    "uuid": "^8.3.1"
+  }
+}

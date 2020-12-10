@@ -3,7 +3,8 @@ package wsClient
 import (
 	"time"
 
-	"backend/hash"
+	"backend/dao"
+	"backend/hashing"
 	"backend/model"
 	"backend/utils"
 
@@ -124,7 +125,7 @@ func (c *chatsManager) CreateChat(chat model.Chat) string {
 			log.Errorf("Recovered in CreateChat. Chat: %v; clients: %v; r = %v", chat, Clients, r)
 		}
 	}()
-	chat.Id = hash.CalculateSha256(time.Now().String() + chat.UserIds[0])
+	chat.Id = hashing.CalculateSha256(time.Now().String() + chat.UserIds[0])
 
 	c.Chats = append(c.Chats, &chat)
 	for _, id := range chat.UserIds {
@@ -152,6 +153,6 @@ func (c *chatsManager) AddUserToChat(userId string, destChat model.Chat) {
 
 var manager chatsManager
 
-func GetManager() model.WsDataManager {
+func GetManager() dao.WsDataManager {
 	return &manager
 }

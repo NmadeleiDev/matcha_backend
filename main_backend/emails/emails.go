@@ -1,17 +1,19 @@
 package emails
 
 import (
-	"backend/model"
-	log "github.com/sirupsen/logrus"
 	"fmt"
 	"net/smtp"
 	"os"
+
+	"backend/dao"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type EmailManager struct {
 }
 
-var Manager model.EmailService = &EmailManager{}
+var Manager dao.EmailService = &EmailManager{}
 
 func (m *EmailManager) SendPasswordResetEmail(to, key string) {
 	template := `
