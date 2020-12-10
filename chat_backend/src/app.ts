@@ -12,14 +12,18 @@ const app = express()
 app.use(bodyParser.json())
 
 const server = http.createServer(app)
-const io = new socket.Server(server, {
+
+const io = require('socket.io')({
     path: '/connect',
-    serveClient: false,
+    serveClient: false
+  });
+
+io.attach(server, {
     pingInterval: 10000,
     pingTimeout: 5000,
-    cookie: false,
-    cors: { origin: true }
-});
+    cookie: false
+  });
+
 
 setHandlers(app)
 
