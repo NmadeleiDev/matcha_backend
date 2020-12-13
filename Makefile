@@ -23,6 +23,9 @@ build: ## build all containers (docker compose)
 up: ## build & start the project (docker-compose)
 	docker-compose up --build -d
 
+up-i: ## build & start the project (docker-compose)
+	docker-compose up --build
+
 down: ## stop the project (docker-compose)
 	docker-compose down
 

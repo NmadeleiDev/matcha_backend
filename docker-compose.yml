@@ -30,19 +30,20 @@ services:
 
   chat_backend:
     build:
-      context: chat_backend
+#      context: chat_backend
+      context: socket_backend
     container_name: chat_backend
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_USER: ${REDIS_USER}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+#      REDIS_PASSWORD: ${REDIS_PASSWORD}
+#      REDIS_USER: ${REDIS_USER}
+#      REDIS_HOST: ${REDIS_HOST}
+#      REDIS_PORT: ${REDIS_PORT}
       BACKEND_PORT: ${CHAT_BACKEND_PORT}
     ports:
       - ${CHAT_BACKEND_PORT}:${CHAT_BACKEND_PORT}
     restart: always
-    depends_on:
-      - redis
+#    depends_on:
+#      - redis
     networks:
       - docker_net
 
@@ -120,19 +121,19 @@ services:
       - postgres_net
     restart: on-failure
 
-  redis:
-    image: redis:6.0.9
-    volumes:
-      - ./data/redis:/data
-      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
-    ports:
-      - ${REDIS_PORT}:${REDIS_PORT}
-    environment: 
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    networks:
-      - docker_net
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "ffa9203c493aa99" ]
-    restart: on-failure
+#  redis:
+#    image: redis:6.0.9
+#    volumes:
+#      - ./data/redis:/data
+#      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
+#    ports:
+#      - ${REDIS_PORT}:${REDIS_PORT}
+#    environment:
+#      REDIS_PASSWORD: ${REDIS_PASSWORD}
+#    networks:
+#      - docker_net
+#    command: [ "redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "ffa9203c493aa99" ]
+#    restart: on-failure
 
 networks:
   postgres_net:

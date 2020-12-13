@@ -1,7 +1,7 @@
 import { Application } from "express";
 import { sendChatCreationMessage } from "../socketUtils/socket";
 import { Chat } from "../model/model";
-import DbClient from '../db/main'
+import DbClient from '../db/redis'
 
 export function setHandlers(app: Application) {
     app.get('/', (req, res) => {

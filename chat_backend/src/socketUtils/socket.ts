@@ -1,5 +1,5 @@
 import {Socket} from "socket.io";
-import ChatsDb from '../db/main'
+import ChatsDb from '../db/redis'
 import {Chat, Message} from "../model/model";
 
 const Clients = new Map() as Map<string, Socket>

@@ -15,7 +15,7 @@ const server = http.createServer(app)
 
 const io = new Server(server,
     {
-        path: '/test',
+        path: '/connection',
         serveClient: false,
         pingInterval: 10000,
         pingTimeout: 5000,
