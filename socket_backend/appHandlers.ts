@@ -162,6 +162,7 @@ export function addServerHandlers(app: Express) {
 
         const chatExists = [...storage.getChats().values()].find(
             (chat) =>
+                chat &&
                 chat.userIds.includes(newChat.userIds[0]) &&
                 chat.userIds.includes(newChat.userIds[1])
         );

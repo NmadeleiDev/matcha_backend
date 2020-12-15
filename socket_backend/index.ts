@@ -3,7 +3,7 @@ import * as storage from './storageStub'
 
 const queryString = require("query-string");
 import express = require("express");
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser').json()
 
 
 const app = express();
@@ -12,10 +12,8 @@ import * as utils from "./utils";
 import * as handlers from "./appHandlers";
 
 const http = require("http").createServer(app);
-
-handlers.addServerHandlers(app);
-
 app.use(bodyParser);
+handlers.addServerHandlers(app);
 
 const readline = require("readline");
 // const jsonParser = require("socket.io-json-parser");
