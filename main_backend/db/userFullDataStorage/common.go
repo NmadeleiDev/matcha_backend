@@ -54,6 +54,21 @@ func (m *ManagerStruct) MakeConnection() {
 	logrus.Info("Connected.")
 }
 
+func (m *ManagerStruct) CreateLocationIndex() {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	key := "position_2dsphere"
+
+	if res, err := userCollection.Indexes().CreateOne(
+		context.TODO(), mongo.IndexModel{Keys: bson.D{{"position", "2dsphere"}}, Options: &options.IndexOptions{Name: &key}}); err != nil {
+		logrus.Errorf("Error creating index: %v", err)
+	} else {
+		logrus.Infof("Created index: %v", res)
+	}
+
+}
+
 func (m *ManagerStruct) CloseConnection() {
 	if err := m.Conn.Disconnect(context.TODO()); err != nil {
 		logrus.Error("Error closing mongo: ", err)
@@ -119,10 +134,28 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		"city": user.City,
 		"$and": bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}},
 	}
+
 	if user.LookFor == "male" || user.LookFor == "female" {
 		filter["gender"] = user.LookFor
 	}
 
+	user.ConvertFromDbCoords()
+	logrus.Infof("user before: %v", user)
+
+	if user.GeoPosition.Lat != 0 && user.GeoPosition.Lon != 0 && user.MaxDist != 0 {
+		filter["position"] = bson.M{
+			"$near": bson.M{
+				"$geometry": bson.M{
+					"type": "Point",
+					"coordinates": bson.A{user.GeoPosition.Lon, user.GeoPosition.Lat},
+				},
+				"$maxDistance": user.MaxDist,
+				"$minDistance": 0,
+			},
+		}
+	}
+
+	logrus.Infof("Full strangers filter: %v", filter)
 	cur, err := userCollection.Find(context.Background(), filter)
 	if  err != nil {
 		logrus.Error("Error finding user document: ", err)

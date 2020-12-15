@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"backend/db/userFullDataStorage"
 	"backend/model"
@@ -26,6 +27,25 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w, "sorry!")
 			return
 		}
+
+		userData.MinAge = utils.UnsafeAtoi(r.URL.Query().Get("minAge"), userData.MinAge)
+		userData.MaxAge = utils.UnsafeAtoi(r.URL.Query().Get("maxAge"), userData.MaxAge)
+		userData.MaxDist = utils.UnsafeAtoi(r.URL.Query().Get("maxDist"), userData.MaxDist)
+
+		if r.URL.Query().Get("city") != "" {
+			userData.City = r.URL.Query().Get("city")
+		}
+		if r.URL.Query().Get("country") != "" {
+			userData.Country = r.URL.Query().Get("country")
+		}
+		if r.URL.Query().Get("gender") != "" {
+			userData.Gender = r.URL.Query().Get("gender")
+		}
+		if r.URL.Query().Get("tags") != "" {
+			userData.Tags = strings.Split(
+				strings.ReplaceAll(r.URL.Query().Get("tags"), " ", ""), ",")
+		}
+
 		strangers, ok := userFullDataStorage.Manager.GetFittingUsers(userData)
 		if ok {
 			utils.SendDataResponse(w, strangers)

@@ -76,6 +76,38 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	return container, nil
 }
 
+func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coordinates) (model.FullUserData, error) {
+	var update bson.M
+
+	opts := options.FindOneAndUpdate()
+
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.M{"id": user.Id}
+	if geo.Lon != 0 && geo.Lat != 0 {
+		update = bson.M{"$set": bson.D{{"position",
+			model.MongoCoors{Type: "Point", Coordinates: []float64{geo.Lon, geo.Lat}}}}}
+	}
+	container := model.FullUserData{}
+
+	projection := bson.M{"banned_user_ids": 0}
+	opts.SetProjection(projection).SetReturnDocument(options.After)
+
+	err := userCollection.FindOneAndUpdate(context.Background(), filter, update, opts).Decode(&container)
+	if err != nil {
+		log.Error("Error finding user document: ", err)
+		return model.FullUserData{}, err
+	}
+
+	if len(container.Avatar) == 0 && len(container.Images) > 0 {
+		container.Avatar = container.Images[rand.Intn(len(container.Images))]
+	}
+	container.ConvertFromDbCoords()
+
+	return container, nil
+}
+
 func (m *ManagerStruct) GetShortUserData(user model.LoginData) (model.ShortUserData, error) {
 
 	database := m.Conn.Database(mainDBName)
@@ -103,7 +135,7 @@ func (m *ManagerStruct) UpdateUser(user model.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
+	//user.ConvertToDbCoords()
 
 	filter := bson.M{"id": user.Id}
 	update := bson.D{
@@ -120,7 +152,8 @@ func (m *ManagerStruct) UpdateUser(user model.FullUserData) bool {
 		{"$set", bson.D{{"look_for", user.LookFor}}},
 		{"$set", bson.D{{"min_age", user.MinAge}}},
 		{"$set", bson.D{{"max_age", user.MaxAge}}},
-		{"$set", bson.D{{"position", position}}}}
+		//{"$set", bson.D{{"position", user.MongoLocation}}},
+	}
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
 	if  err != nil {

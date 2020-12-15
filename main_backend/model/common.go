@@ -27,7 +27,18 @@ type FullUserData struct {
 	TagIds	[]int64		`json:"-" bson:"tag_ids"`
 	Tags	[]string		`json:"tags" bson:"-"`
 	BannedUserIds	[]string	`json:"bannedUserIds,omitempty" bson:"banned_user_ids"`
-	GeoPosition Coordinates	`json:"position,omitempty"`
+	GeoPosition Coordinates	`json:"position,omitempty" bson:"-"`
+	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
+}
+
+func (d *FullUserData) ConvertFromDbCoords() {
+	d.GeoPosition.Lon = d.MongoLocation.Coordinates[0]
+	d.GeoPosition.Lat = d.MongoLocation.Coordinates[1]
+}
+
+func (d *FullUserData) ConvertToDbCoords() {
+	d.MongoLocation.Type = "Point"
+	d.MongoLocation.Coordinates = []float64{d.GeoPosition.Lon, d.GeoPosition.Lat}
 }
 
 type ShortUserData struct {
@@ -46,6 +57,11 @@ type Coordinates struct {
 	Lon			float64		`json:"lon"`
 }
 
+type MongoCoors struct {
+	Type string			`bson:"type"`
+	Coordinates	[]float64		`bson:"coordinates"`
+}
+
 type LoginData struct {
 	Id		string	`json:"id,omitempty" bson:"id,omitempty"`
 	Email    string `json:"email" bson:"email"`
@@ -57,6 +73,7 @@ type Chat struct {
 	UserIds		[]string	`json:"userIds"`
 	Messages	[]Message	`json:"messages"`
 }
+
 func (c *Chat) LastMessage() *Message  {
 	if len(c.Messages) > 0 {
 		return &c.Messages[len(c.Messages) - 1]

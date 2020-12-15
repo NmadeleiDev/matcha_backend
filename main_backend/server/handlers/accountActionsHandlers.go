@@ -46,7 +46,11 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if userMetaDataStorage.Manager.LoginUser(loginData) {
-			userData, err := utils.GetFullUserData(*loginData, false)
+			position := model.Coordinates{
+				Lat: utils.UnsafeAtof(r.Header.Get("latitude"), 0),
+				Lon: utils.UnsafeAtof(r.Header.Get("longitude"), 0),
+			}
+			userData, err := userFullDataStorage.Manager.FindUserAndUpdateGeo(*loginData, position)
 			if err != nil {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
@@ -188,7 +192,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
-		userData, err := utils.GetFullUserData(loginData, false)
+		userData, err := utils.GetUserData(loginData, false)
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
@@ -310,7 +314,7 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 		if isShortData {
 			userData, err = userFullDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
-			userData, err = utils.GetFullUserData(model.LoginData{Id: id}, true)
+			userData, err = utils.GetUserData(model.LoginData{Id: id}, true)
 		}
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")

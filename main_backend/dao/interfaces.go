@@ -7,6 +7,7 @@ type UserFullDataStorage interface {
 	CloseConnection()
 
 	CreateUser(user model.FullUserData) bool
+	FindUserAndUpdateGeo(user model.LoginData, geo model.Coordinates) (model.FullUserData, error)
 	GetFullUserData(user model.LoginData, variant string) (model.FullUserData, error) // variant: private/public/full
 	GetShortUserData(user model.LoginData) (model.ShortUserData, error)
 	UpdateUser(user model.FullUserData) bool
@@ -26,6 +27,8 @@ type UserFullDataStorage interface {
 	AddUserIdToBanned(acc model.LoginData, bannedId string) bool
 	GetUserBannedList(acc model.LoginData) (result []string, err error)
 	RemoveUserIdFromBanned(acc model.LoginData, bannedId string) bool
+
+	CreateLocationIndex()
 }
 
 type UserMetaDataStorage interface {

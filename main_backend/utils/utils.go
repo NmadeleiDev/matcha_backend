@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"backend/db/userMetaDataStorage"
 	"backend/db/userFullDataStorage"
@@ -18,7 +19,7 @@ const (
 	oneDayInSeconds = 86400
 )
 
-func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error) {
+func GetUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error) {
 	var variant string
 
 	if isPublic {
@@ -50,6 +51,7 @@ func GetFullUserData(loginData model.LoginData, isPublic bool) (model.FullUserDa
 			userData.Images = []string{}
 		}
 		userData.Tags = userMetaDataStorage.Manager.GetTagsById(userData.TagIds)
+		userData.ConvertFromDbCoords()
 		return userData, nil
 	}
 }
@@ -210,4 +212,20 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 func GenerateRandomString(s int) (string, error) {
 	b, err := GenerateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
+}
+
+func UnsafeAtoi(src string, alt int) int {
+	if res, err := strconv.Atoi(src); err != nil {
+		return alt
+	} else {
+		return res
+	}
+}
+
+func UnsafeAtof(src string, alt float64) float64 {
+	if res, err := strconv.ParseFloat(src, 64); err != nil {
+		return alt
+	} else {
+		return res
+	}
 }

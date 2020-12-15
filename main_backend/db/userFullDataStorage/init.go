@@ -9,4 +9,5 @@ var Manager dao.UserFullDataStorage
 func Init() {
 	Manager = &ManagerStruct{}
 	Manager.MakeConnection()
+	Manager.CreateLocationIndex()
 }
