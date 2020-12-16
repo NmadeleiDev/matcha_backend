@@ -13,7 +13,7 @@ func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	position := MongoCoords{Type: "point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
+	position := MongoCoords{Type: "Point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
 
 	userDocument := bson.D{
 		{"id", user.Id},
