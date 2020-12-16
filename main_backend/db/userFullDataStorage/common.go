@@ -149,7 +149,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 					"type": "Point",
 					"coordinates": bson.A{user.GeoPosition.Lon, user.GeoPosition.Lat},
 				},
-				"$maxDistance": user.MaxDist,
+				"$maxDistance": user.MaxDist * 1000,
 				"$minDistance": 0,
 			},
 		}
