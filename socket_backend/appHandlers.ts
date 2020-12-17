@@ -52,7 +52,7 @@ export function addSocketHandlers(socket: Socket) {
                     CONSTANTS.WS.MESSAGE,
                     CONSTANTS.MESSAGE_TYPES.UPDATE_MESSAGE,
                     payload,
-                    [payload.recipient]
+                    [payload.recipient, payload.sender]
                 );
 
                 return;
