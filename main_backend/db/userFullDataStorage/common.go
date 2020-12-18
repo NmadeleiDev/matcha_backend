@@ -130,8 +130,6 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 
 	filter := bson.M{
 		"id": bson.M{"$nin": user.BannedUserIds},
-		"country": user.Country,
-		"city": user.City,
 		"$and": bson.A{bson.D{{"birth_date", bson.D{{"$gte", maxStamp}}}}, bson.D{{"birth_date", bson.D{{"$lte", minStamp}}}}},
 	}
 
@@ -142,7 +140,8 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 	user.ConvertFromDbCoords()
 	logrus.Infof("user before: %v", user)
 
-	if user.GeoPosition.Lat != 0 && user.GeoPosition.Lon != 0 && user.MaxDist != 0 {
+	if user.UseLocation &&
+		user.GeoPosition.Lat != 0 && user.GeoPosition.Lon != 0 && user.MaxDist != 0 {
 		filter["position"] = bson.M{
 			"$near": bson.M{
 				"$geometry": bson.M{
@@ -153,6 +152,9 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 				"$minDistance": 0,
 			},
 		}
+	} else {
+		filter["country"] = user.Country
+		filter["city"] = user.City
 	}
 
 	logrus.Infof("Full strangers filter: %v", filter)

@@ -23,8 +23,8 @@ export function addSocketHandlers(socket: Socket) {
                 // send to other NEW_MESSAGE
                 // ---- or maybe just send DELIVERED_MESSAGE
 
-                console.log(`[${json.type}]`);
-                utils.addMessageToChat(payload.chatId, payload);
+                console.log(`[${json.type}]`)
+                utils.addMessageToChat(payload.chatId, payload)
 
                 payload.status = CONSTANTS.MESSAGE_STATUS.STATUS_DELIVERED
 
@@ -33,14 +33,14 @@ export function addSocketHandlers(socket: Socket) {
                     CONSTANTS.MESSAGE_TYPES.NEW_MESSAGE,
                     payload,
                     [payload.recipient]
-                );
+                )
 
                 utils.sendToUser(
                     CONSTANTS.WS.MESSAGE,
                     CONSTANTS.MESSAGE_TYPES.UPDATE_MESSAGE,
                     payload,
                     [payload.sender]
-                );
+                )
 
                 return;
             case CONSTANTS.MESSAGE_TYPES.UPDATE_MESSAGE:

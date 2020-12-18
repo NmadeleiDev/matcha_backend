@@ -27,6 +27,7 @@ type FullUserData struct {
 	TagIds	[]int64		`json:"-" bson:"tag_ids"`
 	Tags	[]string		`json:"tags" bson:"-"`
 	BannedUserIds	[]string	`json:"bannedUserIds,omitempty" bson:"banned_user_ids"`
+	UseLocation	bool	`json:"useLocation" bson:"use_location"`
 	GeoPosition Coordinates	`json:"position,omitempty" bson:"-"`
 	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
 }
