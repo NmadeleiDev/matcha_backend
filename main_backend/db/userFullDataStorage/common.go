@@ -121,6 +121,8 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
 	maxStamp := nowIs - int64(user.MaxAge * yearInMilisecs)
 
+	projection := bson.M{"liked_by": 0, "looked_by": 0, "matches": 0, "banned_user_ids": 0}
+
 	//logrus.Infof("Now  = %17v", nowIs)
 	//logrus.Infof("User = %17v", user.BirthDate)
 	//logrus.Infof("Max  = %17v", maxStamp)
@@ -157,8 +159,10 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		filter["city"] = user.City
 	}
 
+	opts := options.Find().SetProjection(projection)
+
 	logrus.Infof("Full strangers filter: %v", filter)
-	cur, err := userCollection.Find(context.Background(), filter)
+	cur, err := userCollection.Find(context.Background(), filter, opts)
 	if  err != nil {
 		logrus.Error("Error finding user document: ", err)
 		return nil, false

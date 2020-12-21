@@ -4,11 +4,15 @@ import * as storage from './storageStub'
 import {Socket} from "socket.io";
 
 
-export const sendToUser = (WStype: string, type: string, payload: Message | Chat, userIds: string[]) => {
+export const sendToUser = (WStype: string, type: string, payload: object, userIds: string[] | null) => {
     if (WStype === CONSTANTS.WS.CHAT) {
         payload = payload as Chat
     } else if (WStype === CONSTANTS.WS.MESSAGE) {
         payload = payload as Message
+    }
+
+    if (userIds === null) {
+        userIds = Array.from(storage.getUsers().values()).map((user) => user.id)
     }
 
     userIds.forEach(userId => {

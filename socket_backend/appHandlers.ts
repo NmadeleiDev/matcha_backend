@@ -6,9 +6,20 @@ import * as storage from './storageStub'
 import {sendToUser} from "./utils";
 import {Express} from "express";
 import * as queryString from "querystring";
+import {MongoManager} from './db/mongo/mongo'
 
+export function setOnlineState(id: string, state: boolean) {
+    MongoManager.setUserOnlineState(id, state)
+        .then(() => console.log(`Set online=${state} for user ${id}`))
+        .catch((e) => console.warn(`Error setting online=${state} for user ${id}! Error: ${e.toString()}`))
+        .finally(() => notifyAllUsersAboutStatusChange(id, state))
+}
 
-export function addSocketHandlers(socket: Socket) {
+function notifyAllUsersAboutStatusChange(id: string, status: boolean) {
+    sendToUser(CONSTANTS.WS.UPDATE, CONSTANTS.UPDATE_TYPES.USER_STATUS_UPDATE, {userId: id, isOnline: status}, null)
+}
+
+export function addSocketHandlers(userId: string, socket: Socket) {
     // debug only
     socket.onAny((event, ...args) => console.log("On any log: ", event, ...args));
 
@@ -130,6 +141,7 @@ export function addSocketHandlers(socket: Socket) {
 
     socket.on("disconnect", (reason) => {
         console.log("disconnect: " + reason);
+        setOnlineState(userId, false)
         try {
             // utils.deleteUserFromChat(socket.id);
             console.log("user disconnected: " + socket.id);

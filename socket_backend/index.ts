@@ -53,9 +53,10 @@ io.on("connection", (socket: Socket) => {
         name: userId,
         socket: socket,
     });
-    storage.getUsers().set(userId, user);
+    storage.getUsers().set(userId, user)
 
-    handlers.addSocketHandlers(socket)
+    handlers.addSocketHandlers(userId, socket)
+    handlers.setOnlineState(userId, true)
 });
 
 http.listen(parseInt(port), () => {

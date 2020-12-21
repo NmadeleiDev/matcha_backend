@@ -32,9 +32,9 @@ export class User {
 
 export class WSmessage {
     type: string;
-    payload: Chat | Message | null;
+    payload: object | null;
 
-    constructor({type, payload}: { type: string; payload?: Chat | Message }) {
+    constructor({type, payload}: { type: string; payload?: object }) {
         this.type = type;
         this.payload = payload || null;
     }

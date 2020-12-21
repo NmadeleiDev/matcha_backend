@@ -30,6 +30,8 @@ type FullUserData struct {
 	UseLocation	bool	`json:"useLocation" bson:"use_location"`
 	GeoPosition Coordinates	`json:"position,omitempty" bson:"-"`
 	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
+
+	IsOnline	bool	`json:"isOnline" bson:"is_online"`
 }
 
 func (d *FullUserData) ConvertFromDbCoords() {
