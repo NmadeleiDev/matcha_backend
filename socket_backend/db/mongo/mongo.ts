@@ -21,9 +21,10 @@ export class MongoUser {
             throw "Mongo client not connected yet!"
 
         try {
-            await this.connection
+            const res = await this.connection
                 .db(usersDb)
                 .collection(usersCollection).updateOne({id: id}, {$set: {is_online: state}})
+            console.log("STATE UPDATE RES: ", res)
         } catch (e) {
             console.log("Update error: ", e);
             throw(e)
