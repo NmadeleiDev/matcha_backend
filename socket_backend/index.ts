@@ -10,6 +10,8 @@ const app = express();
 import {Socket} from "socket.io";
 import * as utils from "./utils";
 import * as handlers from "./appHandlers";
+import {notificationsClient} from "./db/redis/notifications";
+import {initClient} from "./client";
 
 const http = require("http").createServer(app);
 app.use(bodyParser);
@@ -26,7 +28,7 @@ const io = require("socket.io")(http, {
         credentials: true,
     },
     // transports: ['websocket'],
-    path: "/connect/",
+    path: "/connect",
     // parser: jsonParser,
 });
 
@@ -48,15 +50,8 @@ io.on("connection", (socket: Socket) => {
     const parsed = queryString.parse(socket.handshake.url.split("?")[1]);
     console.log("new conn url parsed:", parsed);
     const userId = parsed.auth;
-    const user = new User({
-        id: userId,
-        name: userId,
-        socket: socket,
-    });
-    storage.getUsers().set(userId, user)
 
-    handlers.setOnlineState(userId, true)
-    handlers.addSocketHandlers(userId, socket)
+    initClient(userId, socket)
 });
 
 http.listen(parseInt(port), () => {

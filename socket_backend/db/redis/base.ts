@@ -1,4 +1,5 @@
 import * as redis from 'redis'
+import {NotificationsClient} from "./notifications";
 
 export class BaseRedis {
     constructor() {
@@ -15,8 +16,13 @@ export class BaseRedis {
         this._client = val
     }
 
+    get isConnected(): boolean {
+        return (!!this.client && this.client.connected)
+    }
+
     private initConnection() {
-        const host = 'redis'
+        const host = (process.env.REDIS_HOST && process.env.REDIS_HOST.length > 0)
+            ? process.env.REDIS_HOST : 'redis'
         const port = (process.env.REDIS_PORT && process.env.REDIS_PORT.length > 0)
             ? process.env.REDIS_PORT : '6379'
         const user = (process.env.REDIS_USER && process.env.REDIS_USER.length > 0)
@@ -31,9 +37,10 @@ export class BaseRedis {
             url: url
         })
 
+        console.log("Connected to redis: ", this.isConnected)
+
         this.client.on("error", function(error) {
             console.error("Create client error: ", error);
         });
     }
-
 }

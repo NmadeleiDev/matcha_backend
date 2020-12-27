@@ -2,7 +2,19 @@ import {Chat, Message, WSmessage} from "./model";
 import CONSTANTS from "./config";
 import * as storage from './storageStub'
 import {Socket} from "socket.io";
+import {MongoManager} from "./db/mongo/mongo";
 
+
+export function setOnlineState(id: string, state: boolean) {
+    MongoManager.setUserOnlineState(id, state)
+        .then(() => console.log(`Set online=${state} for user ${id}`))
+        .catch((e) => console.warn(`Error setting online=${state} for user ${id}! Error: ${e.toString()}`))
+        .finally(() => notifyAllUsersAboutStatusChange(id, state))
+}
+
+function notifyAllUsersAboutStatusChange(id: string, status: boolean) {
+    sendToUser(CONSTANTS.WS.UPDATE, CONSTANTS.UPDATE_TYPES.USER_STATUS_UPDATE, {userId: id, isOnline: status}, null)
+}
 
 export const sendToUser = (WStype: string, type: string, payload: object, userIds: string[] | null) => {
     if (WStype === CONSTANTS.WS.CHAT) {

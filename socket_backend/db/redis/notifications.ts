@@ -9,33 +9,41 @@ import CONSTANTS from '../../config'
 export class NotificationsClient extends BaseRedis{
     constructor() {
         super()
-    }
 
-    subscribe(userId: string, socket: Socket) {
         if (!this.client) {
-            console.error("Client is undef for user: ", userId)
+            console.error("redis client is undef!")
             return
         }
 
         this.client.on("subscribe", function(channel, count) {
-            console.log(`User ${userId} subscribed to his channel: ${channel}`)
+            console.log(`User ${channel} subscribed to his channel: ${channel}, count=${count}`)
         });
 
         this.client.on("message", function(channel, message) {
-            console.log(`User ${userId} got message from redis: ${message.toString()}`)
-            utils.sendToUser(CONSTANTS.WS.UPDATE, CONSTANTS.UPDATE_TYPES.NEW_LIKE, {data: message}, [userId])
+            const body = JSON.parse(message) as {type: string; user: string}
+            
+            console.log(`User ${channel} got message from redis: ${message}`)
+            utils.sendToUser(CONSTANTS.WS.UPDATE, body.type, {data: body.user}, [channel])
         });
+    }
+
+    subscribe(userId: string) {
+        if (!this.client) {
+            console.error("redis client is undef for user: ", userId)
+            return
+        }
+
         this.client.subscribe(userId)
     }
 
-    unsubscribe() {
+    unsubscribe(userId: string) {
         if (!this.client) {
             console.error("Client is undef !")
             return
         }
 
-        this.client.unsubscribe();
-        this.client.quit();
+        this.client.unsubscribe(userId);
+        // this.client.quit();
     }
 }
 

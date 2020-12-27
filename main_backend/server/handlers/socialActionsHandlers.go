@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"backend/db/notificationsBroker"
 	"backend/db/userFullDataStorage"
 	"backend/model"
 	"backend/utils"
@@ -68,6 +69,7 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		if userFullDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
+			notificationsBroker.GetManager().PublishMessage(lookedUserId.Id, notificationsBroker.LookType, loginData.Id)
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
@@ -95,6 +97,7 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		if userFullDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
+			notificationsBroker.GetManager().PublishMessage(lookedUserId.Id, notificationsBroker.LikeType, loginData.Id)
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
@@ -137,6 +140,8 @@ func MatchHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if userFullDataStorage.Manager.SaveMatch(user1Data.Id, user2Data.Id) {
+			notificationsBroker.GetManager().PublishMessage(user1Data.Id, notificationsBroker.MatchType, user2Data.Id)
+			notificationsBroker.GetManager().PublishMessage(user2Data.Id, notificationsBroker.MatchType, user1Data.Id)
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save matched to db.")

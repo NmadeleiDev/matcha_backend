@@ -64,6 +64,13 @@ type UserMetaDataStorage interface {
 	DeleteMessage(id string) bool
 }
 
+type NotificationsBroker interface {
+	MakeConnection()
+	CloseConnection()
+
+	PublishMessage(channelId, mType, originId string)
+}
+
 type WsDataManager interface {
 	CreateChat(chat model.Chat) string
 	FindChat(chatId string) *model.Chat

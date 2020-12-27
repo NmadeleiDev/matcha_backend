@@ -103,7 +103,7 @@ func (m *ManagerStruct) InitTables() {
 		constraint tags_pk
 			primary key,
     value      varchar(255) not null,
-    hashing varchar(32) unique not null,
+    hash varchar(32) unique not null,
     times_mentioned   integer default 1
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
@@ -274,9 +274,9 @@ func (m *ManagerStruct) IncOrInsertTag(tag string) (id int64, err error) {
 	tagBytes := md5.Sum([]byte(tag))
 	tagHash := fmt.Sprintf("%x", tagBytes)
 
-	query := `INSERT INTO ` + tagsTable + ` AS tt (value, hashing) 
+	query := `INSERT INTO ` + tagsTable + ` AS tt (value, hash) 
 		VALUES ($1, $2)
-		ON CONFLICT (hashing) DO UPDATE SET times_mentioned=tt.times_mentioned + 1
+		ON CONFLICT (hash) DO UPDATE SET times_mentioned=tt.times_mentioned + 1
 		RETURNING id`
 
 	if err := m.Conn.QueryRow(query, tag, tagHash).Scan(&id); err != nil {
@@ -291,7 +291,7 @@ func (m *ManagerStruct) DecrTagByValue(tag string) (id int64, err error) {
 	tagHash := fmt.Sprintf("%x", tagBytes)
 
 	query := `UPDATE ` + tagsTable + ` AS tt SET times_mentioned=tt.times_mentioned - 1 
-		WHERE hashing=$1 RETURNING id`
+		WHERE hash=$1 RETURNING id`
 
 	if err := m.Conn.QueryRow(query, tagHash).Scan(&id); err != nil {
 		log.Errorf("Error decrementing tag: %v", err)
