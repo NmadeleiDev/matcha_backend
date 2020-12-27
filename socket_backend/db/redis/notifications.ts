@@ -21,9 +21,9 @@ export class NotificationsClient extends BaseRedis{
 
         this.client.on("message", function(channel, message) {
             const body = JSON.parse(message) as {type: string; user: string}
-            
+
             console.log(`User ${channel} got message from redis: ${message}`)
-            utils.sendToUser(CONSTANTS.WS.UPDATE, body.type, {data: body.user}, [channel])
+            utils.sendToUser(CONSTANTS.WS.UPDATE, body.type, {userId: body.user}, [channel])
         });
     }
 
