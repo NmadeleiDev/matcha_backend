@@ -9,6 +9,7 @@ import * as queryString from "querystring";
 import {MongoManager} from './db/mongo/mongo'
 
 export function setOnlineState(id: string, state: boolean) {
+    console.log(`Setting online=${state} for ${id}`)
     MongoManager.setUserOnlineState(id, state)
         .then(() => console.log(`Set online=${state} for user ${id}`))
         .catch((e) => console.warn(`Error setting online=${state} for user ${id}! Error: ${e.toString()}`))
