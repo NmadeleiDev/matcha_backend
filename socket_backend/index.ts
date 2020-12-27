@@ -26,7 +26,7 @@ const io = require("socket.io")(http, {
         credentials: true,
     },
     // transports: ['websocket'],
-    path: "/connect",
+    path: "/connect/",
     // parser: jsonParser,
 });
 
