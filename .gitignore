@@ -1,6 +1,9 @@
 .idea
 data
-nginx/static
 images
+build
 tests
 .env
+socket_backend/node_modules
+chat_backend/node_modules
+media_backend/node_modules
