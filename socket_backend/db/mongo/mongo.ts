@@ -23,7 +23,7 @@ export class MongoUser {
         try {
             await this.connection
                 .db(usersDb)
-                .collection(usersCollection).updateOne({_id: id}, {is_online: state})
+                .collection(usersCollection).updateOne({id: id}, {$set: {is_online: state}})
         } catch (e) {
             console.log("Update error: ", e);
             throw(e)

@@ -51,9 +51,22 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
 	container := model.FullUserData{}
+	projection := bson.M{}
+
+	if variant == "public" {
+		projection["email"] = 0
+		projection["max_dist"] = 0
+		projection["look_for"] = 0
+		projection["min_age"] = 0
+		projection["max_age"] = 0
+		projection["use_location"] = 0
+		projection["liked_by"] = 0
+		projection["looked_by"] = 0
+		projection["matches"] = 0
+	}
 
 	if variant != "full" {
-		projection := bson.M{"banned_user_ids": 0}
+		projection["banned_user_ids"] = 0
 		opts.SetProjection(projection)
 	}
 
@@ -61,12 +74,6 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	if err != nil {
 		log.Error("Error finding user document: ", err)
 		return model.FullUserData{}, err
-	}
-
-	if variant == "public" {
-		container.LikedBy = nil
-		container.LookedBy = nil
-		container.Matches = nil
 	}
 
 	if len(container.Avatar) == 0 && len(container.Images) > 0 {
@@ -153,7 +160,6 @@ func (m *ManagerStruct) UpdateUser(user model.FullUserData) bool {
 		{"$set", bson.D{{"min_age", user.MinAge}}},
 		{"$set", bson.D{{"max_age", user.MaxAge}}},
 		{"$set", bson.D{{"use_location", user.UseLocation}}},
-		//{"$set", bson.D{{"position", user.MongoLocation}}},
 	}
 
 	res, err := userCollection.UpdateOne(context.TODO(), filter, update)

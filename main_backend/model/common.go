@@ -4,7 +4,7 @@ import "time"
 
 type FullUserData struct {
 	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
-	Email     string   `json:"email" bson:"email"`
+	Email     string   `json:"email,omitempty" bson:"email"`
 	Phone     string   `json:"phone" bson:"phone"`
 	Password  string   `json:"password,omitempty" bson:"-"`
 	Username  string   `json:"username" bson:"username"`
@@ -15,19 +15,19 @@ type FullUserData struct {
 	Country   string   `json:"country" bson:"country"`
 	City      string   `json:"city" bson:"city"`
 	Bio      string   `json:"bio" bson:"bio"`
-	MaxDist   int      `json:"maxDist" bson:"max_dist"`
-	LookFor   string   `json:"lookFor" bson:"look_for"`
-	MinAge    int      `json:"minAge" bson:"min_age"`
-	MaxAge    int      `json:"maxAge" bson:"max_age"`
+	MaxDist   int      `json:"maxDist,omitempty" bson:"max_dist"`
+	LookFor   string   `json:"lookFor,omitempty" bson:"look_for"`
+	MinAge    int      `json:"minAge,omitempty" bson:"min_age"`
+	MaxAge    int      `json:"maxAge,omitempty" bson:"max_age"`
 	Images    []string `json:"images" bson:"images"`
 	Avatar    string   `json:"avatar" bson:"avatar"`
-	LikedBy   []string `json:"likedBy" bson:"liked_by"`
-	LookedBy []string	`json:"lookedBy" bson:"looked_by"`
-	Matches	[]string	`json:"matches" bson:"matches"`
+	LikedBy   []string `json:"likedBy,omitempty" bson:"liked_by"`
+	LookedBy []string	`json:"lookedBy,omitempty" bson:"looked_by"`
+	Matches	[]string	`json:"matches,omitempty" bson:"matches"`
 	TagIds	[]int64		`json:"-" bson:"tag_ids"`
 	Tags	[]string		`json:"tags" bson:"-"`
 	BannedUserIds	[]string	`json:"bannedUserIds,omitempty" bson:"banned_user_ids"`
-	UseLocation	bool	`json:"useLocation" bson:"use_location"`
+	UseLocation	bool	`json:"useLocation,omitempty" bson:"use_location"`
 	GeoPosition Coordinates	`json:"position,omitempty" bson:"-"`
 	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
 
