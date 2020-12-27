@@ -158,11 +158,12 @@ export function addServerHandlers(app: Express) {
     }))
 
     app.get("/chats", ((req, res) => {
-        const parsed = queryString.parse(req.url.split("?")[1]);
-        console.log("Parsed get string: ", parsed)
+        // const parsed = queryString.parse(req.url.split("?")[1]);
+        const id = req.query.id;
+        console.log("Parsed get string: ", id)
 
         const userChats = Array.from(storage.getChats().values())
-            .filter(item => item.userIds.includes(parsed.id as string))
+            .filter(item => item.userIds.includes(id as string))
 
         console.log("Found user chats: ", userChats)
 
