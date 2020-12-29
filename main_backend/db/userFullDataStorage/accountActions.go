@@ -92,10 +92,7 @@ func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coo
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.M{"id": user.Id}
-	//if geo.Lon != 0 && geo.Lat != 0 {
-	update = bson.M{"$set": bson.D{{"position",
-		model.MongoCoors{Type: "Point", Coordinates: []float64{geo.Lon, geo.Lat}}}}}
-	//}
+	update = bson.M{"$set": bson.D{{"position",model.MongoCoors{Type: "Point", Coordinates: []float64{geo.Lon, geo.Lat}}}}}
 	container := model.FullUserData{}
 
 	projection := bson.M{"banned_user_ids": 0}

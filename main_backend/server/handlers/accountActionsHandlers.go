@@ -46,11 +46,18 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if userMetaDataStorage.Manager.LoginUser(loginData) {
-			position := model.Coordinates{
-				Lat: utils.UnsafeAtof(r.Header.Get("latitude"), 0),
-				Lon: utils.UnsafeAtof(r.Header.Get("longitude"), 0),
+			var err error
+			var userData model.FullUserData
+
+			if len(r.Header.Get("latitude")) == 0 || len(r.Header.Get("longitude")) == 0 {
+				userData, err = utils.GetUserData(*loginData, false)
+			} else {
+				position := model.Coordinates{
+					Lat: utils.UnsafeAtof(r.Header.Get("latitude"), 0),
+					Lon: utils.UnsafeAtof(r.Header.Get("longitude"), 0),
+				}
+				userData, err = userFullDataStorage.Manager.FindUserAndUpdateGeo(*loginData, position)
 			}
-			userData, err := userFullDataStorage.Manager.FindUserAndUpdateGeo(*loginData, position)
 			if err != nil {
 				log.Error("Failed to get user data")
 				utils.SendFailResponse(w,"Failed to get user data")
