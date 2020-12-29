@@ -13,7 +13,7 @@ console.log(dsn);
 function mongoFind(collection, findObj) {
     return new Promise((resolve, reject) => {
         collection.find(findObj)
-            .toArray(async (err, items) => {
+            .toArray((err, items) => {
                 if (!Array.isArray(items) || err !== null) {
                     console.log("find error: ", err)
                     reject(err)
@@ -166,7 +166,7 @@ async function deleteImageData(imageIds) {
         return null
     const userId = items[0].id
 
-    if (!await deleteImagesIdFromUserImages(items.map(item => item._id), userId)) {
+    if (!(await deleteImagesIdFromUserImages(items.map(item => item._id), userId))) {
         return null
     }
 
