@@ -85,7 +85,7 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
-	lookedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+	likedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
 	if !ok {
 		return
 	}
@@ -96,14 +96,19 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		if userFullDataStorage.Manager.SaveLiked(lookedUserId.Id, loginData.Id) {
-			notificationsBroker.GetManager().PublishMessage(lookedUserId.Id, notificationsBroker.LikeType, loginData.Id)
+		if userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
+			notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.LikeType, loginData.Id)
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
 		}
 	} else if r.Method == http.MethodDelete {
-		if userFullDataStorage.Manager.DeleteInteraction(*loginData, lookedUserId.Id) {
+		likedId := r.URL.Query().Get("id")
+		if len(likedId) == 0 {
+			utils.SendFailResponse(w,"Id to delete is invalid: " + likedId)
+			return
+		}
+		if userFullDataStorage.Manager.DeleteInteraction(*loginData, likedId) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to delete interactions")
