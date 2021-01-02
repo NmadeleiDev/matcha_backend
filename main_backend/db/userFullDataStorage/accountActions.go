@@ -83,6 +83,33 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	return container, nil
 }
 
+func (m *ManagerStruct) GetUserDataWithCustomProjection(user model.LoginData, projectFields []string, doInclude bool) model.FullUserData {
+	opts := options.FindOne()
+
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	filter := bson.M{"id": user.Id}
+	container := model.FullUserData{}
+	projection := bson.M{}
+
+	projVal := 0
+	if doInclude {
+		projVal = 1
+	}
+	for _, val := range projectFields {
+		projection[val] = projVal
+	}
+
+	err := userCollection.FindOne(context.TODO(), filter, opts).Decode(&container)
+	if err != nil {
+		log.Error("Error finding user document for custom projection: ", err)
+		return model.FullUserData{}
+	}
+
+	return container
+}
+
 func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coordinates) (model.FullUserData, error) {
 	var update bson.M
 

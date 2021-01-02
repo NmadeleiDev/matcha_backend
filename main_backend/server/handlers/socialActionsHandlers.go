@@ -96,11 +96,22 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		if userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
-			notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.LikeType, loginData.Id)
-			utils.SendSuccessResponse(w)
+		userData := userFullDataStorage.Manager.GetUserDataWithCustomProjection(*loginData, []string{"liked_by"}, true)
+		if utils.DoesArrayContain(userData.LikedBy, likedUserId.Id) {
+			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) {
+				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.MatchType, likedUserId.Id)
+				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.MatchType, loginData.Id)
+				utils.SendSuccessResponse(w)
+			} else {
+				utils.SendFailResponse(w,"failed to save matched to db.")
+			}
 		} else {
-			utils.SendFailResponse(w,"failed to save looked to db.")
+			if userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
+				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.LikeType, loginData.Id)
+				utils.SendSuccessResponse(w)
+			} else {
+				utils.SendFailResponse(w,"failed to save looked to db.")
+			}
 		}
 	} else if r.Method == http.MethodDelete {
 		likedId := r.URL.Query().Get("id")

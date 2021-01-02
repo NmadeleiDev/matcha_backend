@@ -10,6 +10,7 @@ type UserFullDataStorage interface {
 	FindUserAndUpdateGeo(user model.LoginData, geo model.Coordinates) (model.FullUserData, error)
 	GetFullUserData(user model.LoginData, variant string) (model.FullUserData, error) // variant: private/public/full
 	GetShortUserData(user model.LoginData) (model.ShortUserData, error)
+	GetUserDataWithCustomProjection(user model.LoginData, projectFields []string, doInclude bool) model.FullUserData
 	UpdateUser(user model.FullUserData) bool
 	DeleteAccount(acc model.LoginData) error
 	DeleteAccountRecordsFromOtherUsers(acc model.LoginData) error
