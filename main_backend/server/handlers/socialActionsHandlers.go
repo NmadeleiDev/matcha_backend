@@ -57,10 +57,6 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LookActionHandler(w http.ResponseWriter, r *http.Request) {
-	lookedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
-	if !ok {
-		return
-	}
 
 	loginData := utils.AuthUserBySessionId(w, r)
 	if loginData == nil {
@@ -68,6 +64,10 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		lookedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
 		if userFullDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
 			notificationsBroker.GetManager().PublishMessage(lookedUserId.Id, notificationsBroker.LookType, loginData.Id)
 			utils.SendSuccessResponse(w)
@@ -85,10 +85,6 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
-	likedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
-	if !ok {
-		return
-	}
 
 	loginData := utils.AuthUserBySessionId(w, r)
 	if loginData == nil {
@@ -96,6 +92,10 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		likedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if !ok {
+			return
+		}
 		userData := userFullDataStorage.Manager.GetUserDataWithCustomProjection(*loginData, []string{"liked_by"}, true)
 		if utils.DoesArrayContain(userData.LikedBy, likedUserId.Id) {
 			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) {
@@ -114,7 +114,7 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if r.Method == http.MethodDelete {
-		likedId := r.URL.Query().Get("id")
+		likedId := mux.Vars(r)["user_id"]
 		if len(likedId) == 0 {
 			utils.SendFailResponse(w,"Id to delete is invalid: " + likedId)
 			return

@@ -33,6 +33,7 @@ func StartServer(port string) {
 
 	router.HandleFunc("/look", handlers.LookActionHandler)
 	router.HandleFunc("/like", handlers.LikeActionHandler)
+	router.HandleFunc("/like/{user_id}", handlers.LikeActionHandler)
 	router.HandleFunc("/match", handlers.MatchHandler)
 
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
