@@ -106,7 +106,7 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			if userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
-				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.LikeType, loginData.Id)
+				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedLikeType, loginData.Id)
 				utils.SendSuccessResponse(w)
 			} else {
 				utils.SendFailResponse(w,"failed to save looked to db.")
@@ -122,6 +122,8 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 			if isMatchDelete {
 				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedMatchType, loginData.Id)
 				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.DeletedMatchType, likedId)
+			} else {
+				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedLikeType, loginData.Id)
 			}
 			utils.SendSuccessResponse(w)
 		} else {

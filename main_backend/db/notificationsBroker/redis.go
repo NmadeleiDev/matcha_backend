@@ -16,7 +16,8 @@ import (
 
 const (
 	LookType         = "NEW_LOOK"
-	LikeType         = "NEW_LIKE"
+	CreatedLikeType  = "NEW_LIKE"
+	DeletedLikeType  = "DELETE_LIKE"
 	CreatedMatchType = "NEW_MATCH"
 	DeletedMatchType = "DELETE_MATCH"
 )
