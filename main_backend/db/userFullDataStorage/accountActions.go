@@ -2,6 +2,8 @@ package userFullDataStorage
 
 import (
 	"backend/model"
+	"backend/utils"
+
 	"context"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -80,6 +82,7 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	if len(container.Avatar) == 0 && len(container.Images) > 0 {
 		container.Avatar = container.Images[rand.Intn(len(container.Images))]
 	}
+	container.Rating = utils.Sigmoid(container.Rating)
 
 	return container, nil
 }
@@ -107,6 +110,7 @@ func (m *ManagerStruct) GetUserDataWithCustomProjection(user model.LoginData, pr
 		log.Error("Error finding user document for custom projection: ", err)
 		return model.FullUserData{}
 	}
+	container.Rating = utils.Sigmoid(container.Rating)
 
 	return container
 }
@@ -136,6 +140,7 @@ func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coo
 		container.Avatar = container.Images[rand.Intn(len(container.Images))]
 	}
 	container.ConvertFromDbCoords()
+	container.Rating = utils.Sigmoid(container.Rating)
 
 	return container, nil
 }

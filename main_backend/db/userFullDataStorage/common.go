@@ -143,6 +143,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		"avatar": 1,
 		"tag_ids": 1,
 		"is_online": 1,
+		"rank": 1,
 	}
 
 	user.BannedUserIds = append(user.BannedUserIds, user.Id)
@@ -193,6 +194,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		if len(container.Avatar) == 0 && len(container.Images) > 0 {
 			container.Avatar = container.Images[rand.Intn(len(container.Images))]
 		}
+		container.Rating = utils.Sigmoid(container.Rating)
 		if err != nil {
 			logrus.Error("Error decoding user: ", err)
 		}

@@ -32,6 +32,7 @@ type FullUserData struct {
 	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
 
 	IsOnline	bool	`json:"isOnline" bson:"is_online"`
+	Rating		float64	`json:"rating" bson:"rank"`
 }
 
 func (d *FullUserData) ConvertFromDbCoords() {

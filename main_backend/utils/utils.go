@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/base64"
 	"encoding/json"
+	"math"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -127,6 +128,10 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+func Sigmoid(src float64) float64 {
+	return 1.0 / (1.0 + math.Exp(-src))
 }
 
 func GenerateRandomString(s int) (string, error) {
