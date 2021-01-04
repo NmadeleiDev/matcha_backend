@@ -1,6 +1,10 @@
 package dao
 
-import "backend/model"
+import (
+	"net/http"
+
+	"backend/model"
+)
 
 type UserFullDataStorage interface {
 	MakeConnection()
@@ -22,12 +26,15 @@ type UserFullDataStorage interface {
 	SaveLiked(likedId, likerId string) bool
 	SaveLooked(lookedId, lookerId string) bool
 	SaveMatch(matched1Id, matched2Id string) bool
-	DeleteInteraction(acc model.LoginData, pairId string) bool
+	DeleteLikeOrMatch(acc model.LoginData, pairId string) (isMatchDelete bool, ok bool)
 	GetUserImages(id string) []string
 
 	AddUserIdToBanned(acc model.LoginData, bannedId string) bool
 	GetUserBannedList(acc model.LoginData) (result []string, err error)
 	RemoveUserIdFromBanned(acc model.LoginData, bannedId string) bool
+
+	// utils
+	GetUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error)
 
 	CreateLocationIndex()
 }
@@ -60,9 +67,9 @@ type UserMetaDataStorage interface {
 	GetAllTags(limit, offset int) (tags []string)
 	ClearUnmentionedTags()
 
-	SaveMessage(message model.Message) bool
-	UpdateMessageState(messageId string, state int) bool
-	DeleteMessage(id string) bool
+	// utils
+	RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData) bool
+	AuthUserBySessionId(w http.ResponseWriter, r *http.Request) *model.LoginData
 }
 
 type NotificationsBroker interface {

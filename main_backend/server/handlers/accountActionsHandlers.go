@@ -50,7 +50,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 			var userData model.FullUserData
 
 			if len(r.Header.Get("latitude")) == 0 || len(r.Header.Get("longitude")) == 0 {
-				userData, err = utils.GetUserData(*loginData, false)
+				userData, err = userFullDataStorage.Manager.GetUserData(*loginData, false)
 			} else {
 				position := model.Coordinates{
 					Lat: utils.UnsafeAtof(r.Header.Get("latitude"), 0),
@@ -63,11 +63,11 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
 				userData.Id = loginData.Id
-				utils.RefreshRequestSessionKeyCookie(w, *loginData)
+				userMetaDataStorage.Manager.RefreshRequestSessionKeyCookie(w, *loginData)
 				utils.SendDataResponse(w, userData)
 			}
 		} else {
-			utils.SendFailResponse(w,"incorrect user data")
+			utils.SendFailResponseWithCode(w,"incorrect user data", http.StatusUnauthorized)
 		}
 	}
 }
@@ -189,7 +189,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 	session := utils.GetCookieValue(r,"session_id")
 	if len(session) == 0 {
-		utils.SendFailResponse(w, "incorrect session id")
+		utils.SendFailResponseWithCode(w, "incorrect session id", http.StatusUnauthorized)
 		return
 	}
 
@@ -199,7 +199,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
-		userData, err := utils.GetUserData(loginData, false)
+		userData, err := userFullDataStorage.Manager.GetUserData(loginData, false)
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
@@ -254,7 +254,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
-	loginData := utils.AuthUserBySessionId(w, r)
+	loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 	if loginData == nil {
 		return
 	}
@@ -314,14 +314,14 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		isShortData := r.URL.Query().Get("full") == "false"
 
-		if utils.AuthUserBySessionId(w, r) == nil {
+		if userMetaDataStorage.Manager.AuthUserBySessionId(w, r) == nil {
 			return
 		}
 
 		if isShortData {
 			userData, err = userFullDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
-			userData, err = utils.GetUserData(model.LoginData{Id: id}, true)
+			userData, err = userFullDataStorage.Manager.GetUserData(model.LoginData{Id: id}, true)
 		}
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
@@ -336,7 +336,7 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		action := mux.Vars(r)["action"]
 
-		data := utils.AuthUserBySessionId(w, r)
+		data := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 		if data == nil {
 			return
 		}
@@ -352,7 +352,7 @@ func GetOwnActionsHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetUserOwnImagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		data := utils.AuthUserBySessionId(w, r)
+		data := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 		if data == nil {
 			return
 		}

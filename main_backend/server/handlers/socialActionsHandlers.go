@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"backend/db/notificationsBroker"
 	"backend/db/userFullDataStorage"
-	"backend/model"
+	"backend/db/userMetaDataStorage"
 	"backend/utils"
 
 	"github.com/gorilla/mux"
@@ -17,7 +16,7 @@ import (
 
 func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		user := utils.AuthUserBySessionId(w, r)
+		user := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 		if user == nil {
 			return
 		}
@@ -58,7 +57,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 
 func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 
-	loginData := utils.AuthUserBySessionId(w, r)
+	loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 	if loginData == nil {
 		return
 	}
@@ -86,7 +85,7 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 
 func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 
-	loginData := utils.AuthUserBySessionId(w, r)
+	loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 	if loginData == nil {
 		return
 	}
@@ -99,8 +98,8 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		userData := userFullDataStorage.Manager.GetUserDataWithCustomProjection(*loginData, []string{"liked_by"}, true)
 		if utils.DoesArrayContain(userData.LikedBy, likedUserId.Id) {
 			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) {
-				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.MatchType, likedUserId.Id)
-				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.MatchType, loginData.Id)
+				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.CreatedMatchType, likedUserId.Id)
+				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedMatchType, loginData.Id)
 				utils.SendSuccessResponse(w)
 			} else {
 				utils.SendFailResponse(w,"failed to save matched to db.")
@@ -115,11 +114,14 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == http.MethodDelete {
 		likedId := mux.Vars(r)["user_id"]
-		if len(likedId) == 0 {
-			utils.SendFailResponse(w,"Id to delete is invalid: " + likedId)
+		if len(likedId) != 64 {
+			utils.SendFailResponse(w, fmt.Sprintf("User id len is invalid. Must be 64, got %v", len(likedId)))
 			return
 		}
-		if userFullDataStorage.Manager.DeleteInteraction(*loginData, likedId) {
+		if isMatchDelete, ok := userFullDataStorage.Manager.DeleteLikeOrMatch(*loginData, likedId); ok {
+			if isMatchDelete {
+				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedMatchType, loginData.Id)
+			}
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to delete interactions")
@@ -134,39 +136,8 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func MatchHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		requestData, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Error("Can't read request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
-			return
-		}
-
-		user1Data := utils.AuthUserBySessionId(w, r)
-		if user1Data == nil {
-			return
-		}
-
-		user2Data := &model.LoginData{}
-		err = json.Unmarshal(requestData, &user2Data)
-		if err != nil {
-			log.Error("Can't parse request body for login: ", err)
-			utils.SendFailResponse(w, "can't read request body")
-			return
-		}
-		if userFullDataStorage.Manager.SaveMatch(user1Data.Id, user2Data.Id) {
-			notificationsBroker.GetManager().PublishMessage(user1Data.Id, notificationsBroker.MatchType, user2Data.Id)
-			notificationsBroker.GetManager().PublishMessage(user2Data.Id, notificationsBroker.MatchType, user1Data.Id)
-			utils.SendSuccessResponse(w)
-		} else {
-			utils.SendFailResponse(w,"failed to save matched to db.")
-		}
-	}
-}
-
 func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
-	data := utils.AuthUserBySessionId(w, r)
+	data := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 	if data == nil {
 		return
 	}

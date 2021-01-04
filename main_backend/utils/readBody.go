@@ -36,7 +36,7 @@ func UnmarshalHttpBodyToLoginData(w http.ResponseWriter, r *http.Request) (*mode
 	err = json.Unmarshal(requestData, &container)
 	if err != nil {
 		logrus.Error("Can't read request body: ", err)
-		SendFailResponse(w, "error reading body")
+		SendFailResponseWithCode(w, "error reading body", http.StatusInternalServerError)
 		return nil, false
 	}
 	return &container, true

@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	LookType  = "NEW_LOOK"
-	LikeType  = "NEW_LIKE"
-	MatchType = "NEW_MATCH"
+	LookType         = "NEW_LOOK"
+	LikeType         = "NEW_LIKE"
+	CreatedMatchType = "NEW_MATCH"
+	DeletedMatchType = "DELETE_MATCH"
 )
 
 type ManagerStruct struct {

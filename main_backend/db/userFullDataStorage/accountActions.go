@@ -32,6 +32,7 @@ func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 		{"liked_by", []string{}},
 		{"matches", []string{}},
 		{"position", position},
+		{"use_location", user.UseLocation},
 	}
 
 	_, err := userCollection.InsertOne(context.TODO(), userDocument)

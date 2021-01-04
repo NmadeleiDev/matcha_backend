@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
+	"backend/db/userMetaDataStorage"
 	"backend/model"
+	"backend/utils"
 
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,6 +20,11 @@ import (
 const userDataCollection = "users"
 const mainDBName = "matcha"
 const yearInMilisecs = 31207680000
+
+var updateRankDocument = bson.M{"rank": bson.M{
+	"$divide":
+	bson.A{bson.M{"$size": "$liked_by"},
+		bson.M{"$max": bson.A{1, bson.M{"$subtract": bson.A{"$liked", bson.M{"$size": "$matches"}}}}}}}}
 
 type ManagerStruct struct {
 	Conn *mongo.Client
@@ -121,12 +128,21 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 	minStamp := nowIs - int64(user.MinAge * yearInMilisecs)
 	maxStamp := nowIs - int64(user.MaxAge * yearInMilisecs)
 
-	projection := bson.M{"liked_by": 0, "looked_by": 0, "matches": 0, "banned_user_ids": 0}
-
-	//logrus.Infof("Now  = %17v", nowIs)
-	//logrus.Infof("User = %17v", user.BirthDate)
-	//logrus.Infof("Max  = %17v", maxStamp)
-	//logrus.Infof("Min  = %17v", minStamp)
+	projection := bson.M{
+		"id": 1,
+		"username": 1,
+		"name": 1,
+		"surname": 1,
+		"birth_date": 1,
+		"gender": 1,
+		"country": 1,
+		"city": 1,
+		"bio": 1,
+		"images": 1,
+		"avatar": 1,
+		"tag_ids": 1,
+		"is_online": 1,
+	}
 
 	user.BannedUserIds = append(user.BannedUserIds, user.Id)
 
@@ -159,7 +175,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		filter["city"] = user.City
 	}
 
-	opts := options.Find().SetProjection(projection)
+	opts := options.Find().SetProjection(projection).SetSort(bson.M{"rank": -1})
 
 	logrus.Infof("Full strangers filter: %v", filter)
 	cur, err := userCollection.Find(context.Background(), filter, opts)
@@ -172,6 +188,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 	for cur.Next(context.Background()) {
 		container := model.FullUserData{}
 		err := cur.Decode(&container)
+		container.Tags = userMetaDataStorage.Manager.GetTagsById(container.TagIds)
 		if err != nil {
 			logrus.Error("Error decoding user: ", err)
 		}
@@ -204,44 +221,57 @@ func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	filter := bson.D{{"id", likedId}}
-	update := bson.D{{"$addToSet", bson.D{{"liked_by", likerId}}}}
+	filterLiked := bson.M{"id": likedId}
+	filterLiker := bson.M{"id": likerId}
+	updateLiked := bson.M{"$addToSet": bson.M{"liked_by": likerId}}
+	updateLiker := bson.M{"$inc": bson.M{"liked": 1}}
 	opts := options.Update()
 
-	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
+	if _, err := userCollection.UpdateOne(context.TODO(), filterLiked, updateLiked, opts); err != nil {
 		logrus.Errorf("Error pushing liked_by: %v", err)
 		return false
 	}
+	if _, err := userCollection.UpdateOne(context.TODO(), filterLiker, updateLiker, opts); err != nil {
+		logrus.Errorf("Error pushing liked_by: %v", err)
+		return false
+	}
+	go m.updateUserRank([]string{likedId, likerId})
 	return true
 }
 
 func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
+	go m.updateUserRank([]string{matched1Id, matched2Id})
 	return m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
 }
 
-func (m *ManagerStruct) DeleteInteraction(acc model.LoginData, pairId string) bool {
+func (m *ManagerStruct) DeleteLikeOrMatch(acc model.LoginData, pairId string) (isMatchDelete bool, ok bool) {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	filterPair := bson.D{{"id", pairId}}
-	filterUser := bson.D{{"id", acc.Id	}}
-	updatePair := bson.D{{"$pull", bson.D{{"liked_by", acc.Id}}},
-		{"$pull", bson.D{{"matches", acc.Id}}}}
-	updateUser := bson.D{{"$pull", bson.D{{"matches", pairId}}}}
-	opts := options.Update()
+	previousPairInfo := model.FullUserData{}
 
-	_, err := userCollection.UpdateOne(context.TODO(), filterPair, updatePair, opts)
-	if err != nil {
+	filterPair := bson.M{"id": pairId}
+	filterUser := bson.M{"id": acc.Id}
+	updatePair := bson.M{"$pull": bson.M{"liked_by": acc.Id, "matches": acc.Id}}
+	updateUser := bson.M{"$pull": bson.M{"matches": pairId}, "$inc": bson.M{"liked": -1}}
+	docBefore := options.Before
+	optsPair := options.FindOneAndUpdateOptions{
+		ReturnDocument: &docBefore,
+		Projection: bson.M{"matches": 1}}
+	optsUser := options.Update()
+
+	if err := userCollection.FindOneAndUpdate(context.TODO(), filterPair, updatePair, &optsPair).Decode(&previousPairInfo); err != nil {
 		logrus.Errorf("Error deleting interactions for pair: %v", err)
-		return false
+		return false, false
 	}
-	_, err = userCollection.UpdateOne(context.TODO(), filterUser, updateUser, opts)
-	if err != nil {
+	if _, err := userCollection.UpdateOne(context.TODO(), filterUser, updateUser, optsUser); err != nil {
 		logrus.Errorf("Error deleting interactions for user: %v", err)
-		return false
+		return false, false
 	}
-	return true
+
+	go m.updateUserRank([]string{acc.Id, pairId})
+
+	return utils.DoesArrayContain(previousPairInfo.Matches, acc.Id), true
 }
 
 func (m *ManagerStruct) GetPreviousInteractions(acc model.LoginData, actionType string) (result []string, err error) {
@@ -285,20 +315,38 @@ func (m *ManagerStruct) GetPreviousInteractions(acc model.LoginData, actionType 
 }
 
 func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
-	user := model.FullUserData{}
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", userId}}
-	update := bson.D{{"$addToSet", bson.D{{"matched", matchedId}}}, {"$pull", bson.D{{"liked_by", matchedId}}}}
-	opts := options.FindOneAndUpdate()
+	update := bson.D{
+		{"$addToSet", bson.D{{"matches", matchedId}}}}
+	opts := options.Update()
 
-	err := userCollection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&user)
+	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
-		logrus.Errorf("Error pushing liked_by: %v", err)
+		logrus.Errorf("Error pushing saving match: %v", err)
 		return false
 	}
+	logrus.Infof("Saved match for %v and %v", userId, matchedId)
 	return true
+}
+
+func (m *ManagerStruct) updateUserRank(userIds []string) {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	opts := options.Update()
+	filter := bson.M{"id": bson.M{"$in": userIds}}
+	update := bson.D{{"$set", updateRankDocument}}
+	pipe := mongo.Pipeline{
+		update,
+	}
+
+	_, err := userCollection.UpdateMany(context.Background(),filter, pipe, opts)
+	if  err != nil {
+		logrus.Error("Error finding user document: ", err)
+	}
 }
 
 func (m *ManagerStruct) GetUserImages(id string) []string {
