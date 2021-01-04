@@ -121,6 +121,7 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		if isMatchDelete, ok := userFullDataStorage.Manager.DeleteLikeOrMatch(*loginData, likedId); ok {
 			if isMatchDelete {
 				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedMatchType, loginData.Id)
+				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.DeletedMatchType, likedId)
 			}
 			utils.SendSuccessResponse(w)
 		} else {

@@ -3,6 +3,7 @@ package userFullDataStorage
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -189,6 +190,9 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		container := model.FullUserData{}
 		err := cur.Decode(&container)
 		container.Tags = userMetaDataStorage.Manager.GetTagsById(container.TagIds)
+		if len(container.Avatar) == 0 && len(container.Images) > 0 {
+			container.Avatar = container.Images[rand.Intn(len(container.Images))]
+		}
 		if err != nil {
 			logrus.Error("Error decoding user: ", err)
 		}
