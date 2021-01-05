@@ -1,6 +1,8 @@
 package userFullDataStorage
 
 import (
+	"fmt"
+
 	"backend/model"
 	"backend/utils"
 
@@ -202,6 +204,29 @@ func (m *ManagerStruct) UpdateUser(user model.FullUserData) bool {
 		return false
 	}
 	return true
+}
+
+func (m *ManagerStruct) SetNewEmail(userId, email string) error {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	//user.ConvertToDbCoords()
+
+	filter := bson.M{"id": userId}
+	update := bson.D{
+		{"$set", bson.D{{"email", email}}},
+	}
+
+	res, err := userCollection.UpdateOne(context.TODO(), filter, update)
+	if  err != nil {
+		log.Error("Error updating user email (mongo): ", err)
+		return err
+	}
+	if res.MatchedCount != 1 {
+		log.Error("Error find user document (res.MatchedCount != 1): ", err)
+		return fmt.Errorf("user not found")
+	}
+	return nil
 }
 
 func (m *ManagerStruct) AddUserIdToBanned(acc model.LoginData, bannedId string) bool {

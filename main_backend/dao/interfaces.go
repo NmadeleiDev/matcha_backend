@@ -16,6 +16,7 @@ type UserFullDataStorage interface {
 	GetShortUserData(user model.LoginData) (model.ShortUserData, error)
 	GetUserDataWithCustomProjection(user model.LoginData, projectFields []string, doInclude bool) model.FullUserData
 	UpdateUser(user model.FullUserData) bool
+	SetNewEmail(userId, email string) error
 	DeleteAccount(acc model.LoginData) error
 	DeleteAccountRecordsFromOtherUsers(acc model.LoginData) error
 
@@ -60,6 +61,10 @@ type UserMetaDataStorage interface {
 	GetAccountIdByResetKey(key string) (id string, err error)
 	SetNewPasswordForAccount(accountId string, newPassword string) error
 
+	CreateResetEmailRecord(userId, email, key string) bool
+	GetResetEmailRecord(key string) (userId, email string, err error)
+	SetNewEmail(userId, email string) error
+
 	IncOrInsertTag(tag string) (id int64, err error)
 	GetTagsById(ids []int64) (tags []string)
 	DecrTagByValue(tag string) (id int64, err error)
@@ -91,7 +96,8 @@ type WsDataManager interface {
 }
 
 type EmailService interface {
-	SendVerificationKey(to, key string)
+	SendAccountVerificationKey(to, key string)
 	SendGoodbyeMessage(to string)
 	SendPasswordResetEmail(to, key string)
+	SendEmailVerificationKey(to, key string)
 }

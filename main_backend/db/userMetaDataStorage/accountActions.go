@@ -54,6 +54,33 @@ WHERE email = $1`
 	return true
 }
 
+func (m *ManagerStruct) CreateResetEmailRecord(userId, email, key string) bool {
+	query := `INSERT INTO ` + emailResetTable + ` (user_id, email, key) VALUES ($1, $2, $3)
+	ON CONFLICT (user_id) DO UPDATE SET key=$3, email=$2`
+	if _, err := m.Conn.Exec(query, userId, email, key); err != nil {
+		log.Errorf("Error creating email reset record: %v; key: %v", err, key)
+		return false
+	}
+	return true
+}
+
+func (m *ManagerStruct) GetResetEmailRecord(key string) (userId, email string, err error) {
+	query := `DELETE FROM ` + emailResetTable + ` WHERE key=$1 RETURNING user_id, email`
+	if err := m.Conn.QueryRow(query, key).Scan(&userId, &email); err != nil {
+		return "", "", err
+	}
+	return userId, email, nil
+}
+
+func (m *ManagerStruct) SetNewEmail(userId, email string) error {
+	query := `UPDATE ` + userDataTable + ` SET email=$1, acc_state=2 WHERE id=$2`
+	if _, err := m.Conn.Exec(query, email, userId); err != nil {
+		log.Errorf("Error setting new email: %v", err)
+		return err
+	}
+	return nil
+}
+
 func (m *ManagerStruct) DeleteAccount(loginData model.LoginData) error {
 	query := `DELETE FROM ` + userDataTable + ` WHERE id=$1`
 	if _, err := m.Conn.Exec(query, loginData.Id); err != nil {

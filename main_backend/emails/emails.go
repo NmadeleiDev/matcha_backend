@@ -26,11 +26,18 @@ func (m *EmailManager) SendPasswordResetEmail(to, key string) {
 	m.sendEmailFromService(to, "Matcha password reset", body)
 }
 
-func (m *EmailManager) SendVerificationKey(to, key string) {
-	//link := "https://aim-love.ga/verify/" + key
+func (m *EmailManager) SendAccountVerificationKey(to, key string) {
+	//link := "https://aim-love.ga/api/v1/verify/" + key
 	link := "http://localhost:" + os.Getenv("BACKEND_PORT") + "/api/v1/verify/" + key
-	body := `<h3>Hello from Matcha!</h3><p>ToChat verify this email address, follow this <a href="` + link + `">link</a></p>`
+	body := `<h3>Hello from Matcha!</h3><p>To verify this email address, follow this <a href="` + link + `">link</a></p>`
 	m.sendEmailFromService(to, "Verify email", body)
+}
+
+func (m *EmailManager) SendEmailVerificationKey(to, key string)  {
+	//link := "https://aim-love.ga/verify/" + key
+	link := fmt.Sprintf("http://localhost:%v/email/verify?key=%v", os.Getenv("BACKEND_PORT"), key)
+	body := `<h3>Change email</h3><p>To verify this new email address, follow this <a href="` + link + `">link</a></p>`
+	m.sendEmailFromService(to, "Change email", body)
 }
 
 func (m *EmailManager) SendGoodbyeMessage(to string) {
@@ -53,6 +60,6 @@ func (m *EmailManager) sendEmailFromService(to, subject, body string) {
 		from, []string{to}, []byte(msg))
 
 	if err != nil {
-		log.Errorf("smtp error: %s", err)
+		log.Errorf("smtp error: %s; addr=%v, passwd=%v", err, from, pass)
 	}
 }

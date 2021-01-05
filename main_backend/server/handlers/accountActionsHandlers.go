@@ -34,7 +34,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		emails.Manager.SendVerificationKey(userData.Email, authKey)
+		emails.Manager.SendAccountVerificationKey(userData.Email, authKey)
 		utils.SendSuccessResponse(w)
 	}
 }
@@ -253,12 +253,62 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func EmailActionsHandler(w http.ResponseWriter, r *http.Request) {
+	const (
+		changeEmailAction = "change"
+		verifyEmailAction = "verify"
+		keyLen = 32
+	)
+
+	action := mux.Vars(r)["action"]
+	if r.Method == http.MethodPut && action == changeEmailAction {
+		loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
+		emailData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if loginData == nil || !ok {
+			return
+		}
+		key, err := utils.GenerateRandomString(keyLen)
+		if err != nil {
+			log.Errorf("Failed to generate key to change email: %v", err)
+			utils.SendFailResponseWithCode(w, fmt.Sprintf("Error: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if userMetaDataStorage.Manager.CreateResetEmailRecord(loginData.Id, emailData.Email, key) {
+			emails.Manager.SendEmailVerificationKey(emailData.Email, key)
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponseWithCode(w, "Failed to init procedure", http.StatusInternalServerError)
+		}
+	} else if r.Method == http.MethodGet && action == verifyEmailAction {
+		key := r.URL.Query().Get("key")
+		if len(key) != keyLen {
+			utils.SendFailResponseWithCode(w, fmt.Sprintf("Key len expected %v, got %v", keyLen, len(key)), http.StatusBadRequest)
+			return
+		}
+		userId, email, err := userMetaDataStorage.Manager.GetResetEmailRecord(key)
+		if err != nil {
+			log.Errorf("Error getting email: %v", err)
+			utils.SendFailResponseWithCode(w, "Failed to get email!", http.StatusInternalServerError)
+			return
+		}
+		if err := userMetaDataStorage.Manager.SetNewEmail(userId, email); err != nil {
+			utils.SendFailResponseWithCode(w, "Failed to set email! " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := userFullDataStorage.Manager.SetNewEmail(userId, email); err != nil {
+			utils.SendFailResponseWithCode(w, "Failed to set email! " + err.Error(), http.StatusInternalServerError)
+			return
+		}
+		utils.SendSuccessResponse(w)
+	}
+}
+
 func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 	loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
 	if loginData == nil {
 		return
 	}
-	if r.Method == http.MethodPut {
+	if r.Method == http.MethodPost {
 		tags, ok := utils.UnmarshalHttpBodyToTags(w, r)
 		if !ok {
 			return
@@ -277,6 +327,38 @@ func UserTagsHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to save tags: %v", failedTags))
+		}
+	} else if r.Method == http.MethodPut {
+		userTagIds := userFullDataStorage.Manager.GetUserDataWithCustomProjection(*loginData, []string{"tag_ids"}, true).TagIds
+		userTags := userMetaDataStorage.Manager.GetTagsById(userTagIds)
+		newTags, ok := utils.UnmarshalHttpBodyToTags(w, r)
+		if !ok {
+			return
+		}
+		failedTags := make([]string, 0, len(userTagIds) + len(newTags.Tags))
+
+		for _, tag := range append(userTags, newTags.Tags...) {
+			exists := utils.DoesArrayContain(userTags, tag)
+			posted := utils.DoesArrayContain(newTags.Tags, tag)
+			if exists && !posted {
+				id, err := userMetaDataStorage.Manager.DecrTagByValue(tag)
+				ok := userFullDataStorage.Manager.DeleteTagFromUserTags(*loginData, id)
+				if err != nil || !ok {
+					failedTags = append(failedTags, tag)
+				}
+			} else if posted && !exists {
+				id, err := userMetaDataStorage.Manager.IncOrInsertTag(tag)
+				if err != nil {
+					failedTags = append(failedTags, tag)
+				} else {
+					userFullDataStorage.Manager.AddTagToUserTags(*loginData, id)
+				}
+			}
+		}
+		if len(failedTags) == 0 {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponse(w, fmt.Sprintf("Failed to manage tags: %v", failedTags))
 		}
 	} else if r.Method == http.MethodDelete {
 		tags, ok := utils.UnmarshalHttpBodyToTags(w, r)

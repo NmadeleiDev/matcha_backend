@@ -5,7 +5,7 @@ import "time"
 type FullUserData struct {
 	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
 	Email     string   `json:"email,omitempty" bson:"email"`
-	Phone     string   `json:"phone" bson:"phone,omitempty"`
+	Phone     string   `json:"phone,omitempty" bson:"phone"`
 	Password  string   `json:"password,omitempty" bson:"-"`
 	Username  string   `json:"username" bson:"username"`
 	Name  string   `json:"name" bson:"name"`

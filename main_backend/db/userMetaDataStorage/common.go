@@ -23,6 +23,7 @@ import (
 const (
 	userDataTable = "user_data_schema.user_data"
 	passwordResetTable = "user_data_schema.password_reset"
+	emailResetTable = "user_data_schema.email_reset"
 	tagsTable = "user_data_schema.tags"
 	messagesTable = "message_data_schema.messages"
 	hashCost      = 14
@@ -91,6 +92,19 @@ func (m *ManagerStruct) InitTables() {
             primary key,
     key      varchar(128) not null,
 	state		integer default 0,
+	created_at		timestamp default now()::timestamp
+)`
+	if _, err := m.Conn.Exec(query); err != nil {
+		log.Fatal("Error creating table: ", err)
+	}
+
+	query = `create table if not exists ` + emailResetTable + `
+(
+    user_id            varchar(256)       not null
+        constraint email_reset_pk
+            primary key,
+    key      varchar(128) not null,
+	email		varchar(256) not null,
 	created_at		timestamp default now()::timestamp
 )`
 	if _, err := m.Conn.Exec(query); err != nil {

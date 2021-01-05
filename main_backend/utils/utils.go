@@ -136,7 +136,7 @@ func Sigmoid(src float64) float64 {
 
 func GenerateRandomString(s int) (string, error) {
 	b, err := GenerateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
+	return base64.URLEncoding.EncodeToString(b)[:s], err
 }
 
 func UnsafeAtoi(src string, alt int) int {
