@@ -32,6 +32,7 @@ type FullUserData struct {
 	MongoLocation MongoCoors	`json:"-" bson:"position,omitempty"`
 
 	IsOnline	bool	`json:"isOnline" bson:"is_online"`
+	LastOnline	int		`json:"lastOnline" bson:"last_online"`
 	Rating		float64	`json:"rating" bson:"rank"`
 }
 

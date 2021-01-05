@@ -144,6 +144,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		"tag_ids": 1,
 		"is_online": 1,
 		"rank": 1,
+		"last_online": 1,
 	}
 
 	user.BannedUserIds = append(user.BannedUserIds, user.Id)

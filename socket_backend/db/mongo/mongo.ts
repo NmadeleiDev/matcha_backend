@@ -33,6 +33,24 @@ export class MongoUser {
         }
     }
 
+    async updateUserLastOnlineTime(id: string) {
+        if (!this.connection)
+            throw "Mongo client not connected yet!"
+
+        const time = Math.round(Date.now() / 1000)
+        try {
+            const res = await this.connection
+                .db(usersDb)
+                .collection(usersCollection).updateOne({id: id}, {$set: {last_online: time}})
+            if (res.modifiedCount !== 1) {
+                console.log("FAILED TO LAST ONLINE TIME FOR: ", id)
+            }
+        } catch (e) {
+            console.log("Update error: ", e);
+            throw(e)
+        }
+    }
+
     async initConnection() {
         try {
             const mongoClient = new mongo.MongoClient(DSN, {useUnifiedTopology: true});

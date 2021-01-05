@@ -2,6 +2,7 @@ package userFullDataStorage
 
 import (
 	"fmt"
+	"time"
 
 	"backend/model"
 	"backend/utils"
@@ -37,6 +38,7 @@ func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 		{"matches", []string{}},
 		{"position", position},
 		{"use_location", user.UseLocation},
+		{"last_online", time.Now().Unix()},
 	}
 
 	_, err := userCollection.InsertOne(context.TODO(), userDocument)

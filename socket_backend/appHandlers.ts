@@ -132,6 +132,7 @@ export function addSocketHandlers(userId: string, socket: Socket) {
     socket.on("disconnect", (reason) => {
         console.log("disconnect: " + reason);
         utils.setOnlineState(userId, false)
+        MongoManager.updateUserLastOnlineTime(userId).catch(e => console.warn("Failed to update last online time: " + e.toString()))
         notificationsClient.unsubscribe(userId)
         try {
             // utils.deleteUserFromChat(socket.id);
