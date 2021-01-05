@@ -35,7 +35,7 @@ func (m *EmailManager) SendAccountVerificationKey(to, key string) {
 
 func (m *EmailManager) SendEmailVerificationKey(to, key string)  {
 	//link := "https://aim-love.ga/verify/" + key
-	link := fmt.Sprintf("http://localhost:%v/email/verify?key=%v", os.Getenv("BACKEND_PORT"), key)
+	link := fmt.Sprintf("http://localhost:%v/email/verify?key=%v", os.Getenv("FRONT_PORT"), key)
 	body := `<h3>Change email</h3><p>To verify this new email address, follow this <a href="` + link + `">link</a></p>`
 	m.sendEmailFromService(to, "Change email", body)
 }

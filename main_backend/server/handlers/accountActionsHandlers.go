@@ -299,7 +299,7 @@ func EmailActionsHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponseWithCode(w, "Failed to set email! " + err.Error(), http.StatusInternalServerError)
 			return
 		}
-		utils.SendSuccessResponse(w)
+		utils.SendDataResponse(w, model.LoginData{Id: userId, Email: email})
 	}
 }
 
