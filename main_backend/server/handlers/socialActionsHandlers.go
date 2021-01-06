@@ -97,7 +97,8 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		userData := userFullDataStorage.Manager.GetUserDataWithCustomProjection(*loginData, []string{"liked_by"}, true)
 		if utils.DoesArrayContain(userData.LikedBy, likedUserId.Id) {
-			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) {
+			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) &&
+				userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
 				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.CreatedMatchType, likedUserId.Id)
 				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedMatchType, loginData.Id)
 				utils.SendSuccessResponse(w)
@@ -174,5 +175,28 @@ func ManageBannedUsersHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			utils.SendSuccessResponse(w)
 		}
+	}
+}
+
+
+
+func ReportUserHandler(w http.ResponseWriter, r *http.Request) {
+	data := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
+	if data == nil {
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		report, ok := utils.UnmarshalHttpBodyToReport(w, r)
+		if !ok {
+			return
+		}
+		if userFullDataStorage.Manager.SaveReport(*report) {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponseWithCode(w, "Failed to save report", http.StatusInternalServerError)
+		}
+	} else {
+		utils.SendFailResponseWithCode(w, "Not allowed", http.StatusMethodNotAllowed)
 	}
 }

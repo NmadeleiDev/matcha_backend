@@ -37,6 +37,8 @@ type UserFullDataStorage interface {
 	// utils
 	GetUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error)
 
+	SaveReport(report model.Report) bool
+
 	CreateLocationIndex()
 }
 

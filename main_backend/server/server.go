@@ -25,21 +25,19 @@ func StartServer(port string) {
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)
 	router.HandleFunc("/ban", handlers.ManageBannedUsersHandler)
 	router.HandleFunc("/ban/{id}", handlers.ManageBannedUsersHandler)
-
 	router.HandleFunc("/tag", handlers.UserTagsHandler)
-
 	router.HandleFunc("/media", handlers.GetUserOwnImagesHandler) // получить свои фотки
 
 	router.HandleFunc("/strangers", handlers.GetStrangersHandler)
-
 	router.HandleFunc("/look", handlers.LookActionHandler)
 	router.HandleFunc("/like", handlers.LikeActionHandler)
 	router.HandleFunc("/like/{user_id}", handlers.LikeActionHandler)
 
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
-
 	router.HandleFunc("/chat", handlers.ManagerChatsHandler)
 	router.HandleFunc("/chat/{chat_id}", handlers.ManagerChatsHandler)
+
+	router.HandleFunc("/report", handlers.ReportUserHandler)
 
 	log.Info("Listening ", port)
 	if err := http.ListenAndServe(":"+port, router); err != nil {

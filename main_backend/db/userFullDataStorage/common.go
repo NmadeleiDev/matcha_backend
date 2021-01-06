@@ -19,6 +19,7 @@ import (
 )
 
 const userDataCollection = "users"
+const reportsCollection = "reports"
 const mainDBName = "matcha"
 const yearInMilisecs = 31207680000
 
@@ -247,8 +248,9 @@ func (m *ManagerStruct) SaveLiked(likedId, likerId string) bool {
 }
 
 func (m *ManagerStruct) SaveMatch(matched1Id, matched2Id string) bool {
+	res := m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
 	go m.updateUserRank([]string{matched1Id, matched2Id})
-	return m.makeMatchForAccount(matched1Id, matched2Id) && m.makeMatchForAccount(matched2Id, matched1Id)
+	return res
 }
 
 func (m *ManagerStruct) DeleteLikeOrMatch(acc model.LoginData, pairId string) (isMatchDelete bool, ok bool) {
@@ -326,8 +328,9 @@ func (m *ManagerStruct) makeMatchForAccount(userId, matchedId string) bool {
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.D{{"id", userId}}
-	update := bson.D{
-		{"$addToSet", bson.D{{"matches", matchedId}}}}
+	update := bson.M{
+		"$addToSet": bson.M{"matches": matchedId},
+	}
 	opts := options.Update()
 
 	_, err := userCollection.UpdateOne(context.TODO(), filter, update, opts)
@@ -354,6 +357,20 @@ func (m *ManagerStruct) updateUserRank(userIds []string) {
 	if  err != nil {
 		logrus.Error("Error finding user document: ", err)
 	}
+}
+
+func (m *ManagerStruct) SaveReport(report model.Report) bool {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(reportsCollection)
+
+	opts := options.InsertOne()
+
+	_, err := userCollection.InsertOne(context.Background(), report, opts)
+	if  err != nil {
+		logrus.Error("Error finding user document: ", err)
+		return false
+	}
+	return true
 }
 
 func (m *ManagerStruct) GetUserImages(id string) []string {
