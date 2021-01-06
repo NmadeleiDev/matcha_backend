@@ -201,6 +201,8 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		userData, err := userFullDataStorage.Manager.GetUserData(loginData, false)
 		if err != nil {
+			utils.SendFailResponseWithCode(w,"Failed to get user data", http.StatusInternalServerError)
+		} else {
 			filteredLiked := make([]string, 0, len(userData.LikedBy))
 			for _, id := range userData.LikedBy {
 				if !utils.DoesArrayContain(userData.Matches, id) {
@@ -208,8 +210,6 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			userData.LikedBy = filteredLiked
-			utils.SendFailResponse(w,"Failed to get user data")
-		} else {
 			utils.SendDataResponse(w, userData)
 			return
 		}
