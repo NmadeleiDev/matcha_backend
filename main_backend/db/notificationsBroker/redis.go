@@ -49,11 +49,11 @@ func (m *ManagerStruct) CloseConnection() {
 func (m *ManagerStruct) PublishMessage(channelId, mType, originId string) {
 	idxKey := channelId + ":lastWritten"
 	message := model.Notification{Type: mType, User: originId}
-	index, err := m.client.Get(context.TODO(), idxKey).Int()
-	if err != nil {
-		logrus.Errorf("Error getting lastWrittenIndex from redis: %v", err)
-		index = 0
-	}
+	//index, err := m.client.Get(context.TODO(), idxKey).Int()
+	//if err != nil {
+	//	logrus.Errorf("Error getting lastWrittenIndex from redis: %v", err)
+	//	index = 0
+	//}
 	body, err := json.Marshal(message)
 	if err != nil {
 		logrus.Errorf("Error marshal message for notif: %v", err)
