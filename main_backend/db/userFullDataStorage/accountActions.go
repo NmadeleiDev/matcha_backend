@@ -55,7 +55,7 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	log.Info("UserId: ", user)
+	//log.Info("UserId: ", user)
 	filter := bson.M{"id": user.Id}
 	container := model.FullUserData{}
 	projection := bson.M{}

@@ -160,7 +160,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 	}
 
 	user.ConvertFromDbCoords()
-	logrus.Infof("user before: %v", user)
+	//logrus.Infof("user before: %v", user)
 
 	if user.UseLocation &&
 		user.GeoPosition.Lat != 0 && user.GeoPosition.Lon != 0 && user.MaxDist != 0 {
@@ -181,7 +181,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 
 	opts := options.Find().SetProjection(projection).SetSort(bson.M{"rank": -1})
 
-	logrus.Infof("Full strangers filter: %v", filter)
+	//logrus.Infof("Full strangers filter: %v", filter)
 	cur, err := userCollection.Find(context.Background(), filter, opts)
 	if  err != nil {
 		logrus.Error("Error finding user document: ", err)

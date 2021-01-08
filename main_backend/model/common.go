@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 type FullUserData struct {
 	Id        string   `json:"id,omitempty" bson:"id,omitempty"`
 	Email     string   `json:"email,omitempty" bson:"email"`
@@ -97,7 +95,7 @@ type Message struct {
 }
 
 type Report struct {
-	Date	time.Time		`json:"date" bson:"date"`
+	Date	int64		`json:"date" bson:"date"`
 	Category	string		`json:"category" bson:"category"`
 	Complaint string		`json:"complaint" bson:"complaint"`
 	AuthorId	string	`json:"authorId" bson:"author_id"`

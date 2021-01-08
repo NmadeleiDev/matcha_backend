@@ -110,7 +110,7 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedLikeType, loginData.Id)
 				utils.SendSuccessResponse(w)
 			} else {
-				utils.SendFailResponse(w,"failed to save looked to db.")
+				utils.SendFailResponse(w,"failed to save liked to db.")
 			}
 		}
 	} else if r.Method == http.MethodDelete {
