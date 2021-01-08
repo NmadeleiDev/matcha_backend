@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/db/userMetaDataStorage"
 	"backend/db/userFullDataStorage"
+	"backend/dto"
 	"backend/emails"
 	"backend/hashing"
 	"backend/model"
@@ -88,7 +89,7 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			data, err := userFullDataStorage.Manager.GetFullUserData(login, "public")
+			data, err := userFullDataStorage.Manager.GetFullUserData(login, true)
 			if err != nil {
 				utils.SendFailResponse(w, "Failed to get user data")
 			} else {
@@ -199,8 +200,9 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
-		userData, err := userFullDataStorage.Manager.GetUserData(loginData, false)
-		if err != nil {
+		userDto := dto.GetUserDTO(&model.FullUserData{Id: loginData.Id}).LoadUserData(false).PrepareUserDataForClient()
+		userData := userDto.GetUser()
+		if userDto.GetError() != nil {
 			utils.SendFailResponseWithCode(w,"Failed to get user data", http.StatusInternalServerError)
 		} else {
 			filteredLiked := make([]string, 0, len(userData.LikedBy))
@@ -233,7 +235,7 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		utils.SendSuccessResponse(w)
 	} else if r.Method == http.MethodDelete {
-		userData, err := userFullDataStorage.Manager.GetFullUserData(loginData, "public")
+		userData, err := userFullDataStorage.Manager.GetFullUserData(loginData, true)
 		if err != nil {
 			utils.SendFailResponse(w, fmt.Sprintf("Failed to get user data: %v", err))
 			return
@@ -410,7 +412,9 @@ func GetUserDataHandler(w http.ResponseWriter, r *http.Request) {
 		if isShortData {
 			userData, err = userFullDataStorage.Manager.GetShortUserData(model.LoginData{Id: id})
 		} else {
-			userData, err = userFullDataStorage.Manager.GetUserData(model.LoginData{Id: id}, true)
+			userDto := dto.GetUserDTO(&model.FullUserData{Id: id}).LoadUserData(true).PrepareUserDataForClient()
+			userData = userDto.GetUser()
+			err = userDto.GetError()
 		}
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")

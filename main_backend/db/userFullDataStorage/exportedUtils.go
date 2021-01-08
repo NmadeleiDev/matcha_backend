@@ -1,21 +1,13 @@
 package userFullDataStorage
 
 import (
-	"backend/db/userMetaDataStorage"
 	"backend/model"
 
 	"github.com/sirupsen/logrus"
 )
 
 func (m *ManagerStruct) GetUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error) {
-	var variant string
-
-	if isPublic {
-		variant = "public"
-	} else {
-		variant = "private"
-	}
-	userData, err := Manager.GetFullUserData(loginData, variant)
+	userData, err := Manager.GetFullUserData(loginData, isPublic)
 	if err != nil {
 		logrus.Error("Failed to get user data")
 		return model.FullUserData{}, err
@@ -38,8 +30,6 @@ func (m *ManagerStruct) GetUserData(loginData model.LoginData, isPublic bool) (m
 		if userData.Images == nil {
 			userData.Images = []string{}
 		}
-		userData.Tags = userMetaDataStorage.Manager.GetTagsById(userData.TagIds)
-		userData.ConvertFromDbCoords()
 		return userData, nil
 	}
 }

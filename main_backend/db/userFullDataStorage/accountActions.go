@@ -1,17 +1,15 @@
 package userFullDataStorage
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"backend/model"
-	"backend/utils"
 
-	"context"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"math/rand"
 )
 
 func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
@@ -49,7 +47,7 @@ func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 	return true
 }
 
-func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (model.FullUserData, error) {
+func (m *ManagerStruct) GetFullUserData(user model.LoginData, isPublic bool) (model.FullUserData, error) {
 	opts := options.FindOne()
 
 	database := m.Conn.Database(mainDBName)
@@ -60,7 +58,7 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 	container := model.FullUserData{}
 	projection := bson.M{}
 
-	if variant == "public" {
+	if isPublic {
 		projection["email"] = 0
 		projection["max_dist"] = 0
 		projection["look_for"] = 0
@@ -72,21 +70,11 @@ func (m *ManagerStruct) GetFullUserData(user model.LoginData, variant string) (m
 		projection["matches"] = 0
 	}
 
-	if variant != "full" {
-		projection["banned_user_ids"] = 0
-		opts.SetProjection(projection)
-	}
-
 	err := userCollection.FindOne(context.Background(), filter, opts).Decode(&container)
 	if err != nil {
 		log.Error("Error finding user document: ", err)
 		return model.FullUserData{}, err
 	}
-
-	if len(container.Avatar) == 0 && len(container.Images) > 0 {
-		container.Avatar = container.Images[rand.Intn(len(container.Images))]
-	}
-	container.Rating = utils.Sigmoid(container.Rating)
 
 	return container, nil
 }
@@ -114,7 +102,6 @@ func (m *ManagerStruct) GetUserDataWithCustomProjection(user model.LoginData, pr
 		log.Error("Error finding user document for custom projection: ", err)
 		return model.FullUserData{}
 	}
-	container.Rating = utils.Sigmoid(container.Rating)
 
 	return container
 }
@@ -140,12 +127,6 @@ func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coo
 		return model.FullUserData{}, err
 	}
 
-	if len(container.Avatar) == 0 && len(container.Images) > 0 {
-		container.Avatar = container.Images[rand.Intn(len(container.Images))]
-	}
-	container.ConvertFromDbCoords()
-	container.Rating = utils.Sigmoid(container.Rating)
-
 	return container, nil
 }
 
@@ -163,10 +144,6 @@ func (m *ManagerStruct) GetShortUserData(user model.LoginData) (model.ShortUserD
 		return model.ShortUserData{}, err
 	} else {
 		log.Infof("Got user document: %v; avatar = %v", container, container.Avatar)
-	}
-
-	if len(container.Avatar) == 0 && len(container.Images) > 0 {
-		container.Avatar = container.Images[rand.Intn(len(container.Images))]
 	}
 
 	return container, nil

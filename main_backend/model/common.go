@@ -35,8 +35,10 @@ type FullUserData struct {
 }
 
 func (d *FullUserData) ConvertFromDbCoords() {
-	d.GeoPosition.Lon = d.MongoLocation.Coordinates[0]
-	d.GeoPosition.Lat = d.MongoLocation.Coordinates[1]
+	if len(d.MongoLocation.Coordinates) == 2 {
+		d.GeoPosition.Lon = d.MongoLocation.Coordinates[0]
+		d.GeoPosition.Lat = d.MongoLocation.Coordinates[1]
+	}
 }
 
 func (d *FullUserData) ConvertToDbCoords() {

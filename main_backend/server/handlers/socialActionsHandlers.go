@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"backend/db/notificationsBroker"
+	"backend/db/realtimeDataDb"
 	"backend/db/userFullDataStorage"
 	"backend/db/userMetaDataStorage"
+	"backend/dto"
 	"backend/utils"
 
 	"github.com/gorilla/mux"
@@ -21,7 +22,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		userData, err := userFullDataStorage.Manager.GetFullUserData(*user, "full")
+		userData, err := userFullDataStorage.Manager.GetFullUserData(*user, false)
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")
@@ -47,6 +48,15 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		strangers, ok := userFullDataStorage.Manager.GetFittingUsers(userData)
+		for i, acc := range strangers {
+			userDto := dto.GetUserDTO(&acc).PrepareUserDataForClient()
+			userData := userDto.GetUser()
+			if userDto.GetError() != nil {
+				log.Errorf("Error preparing user data for strangers: %v", err)
+				continue
+			}
+			strangers[i] = *userData
+		}
 		if ok {
 			utils.SendDataResponse(w, strangers)
 		} else {
@@ -68,7 +78,7 @@ func LookActionHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if userFullDataStorage.Manager.SaveLooked(lookedUserId.Id, loginData.Id) {
-			notificationsBroker.GetManager().PublishMessage(lookedUserId.Id, notificationsBroker.LookType, loginData.Id)
+			realtimeDataDb.GetManager().PublishMessage(lookedUserId.Id, realtimeDataDb.LookType, loginData.Id)
 			utils.SendSuccessResponse(w)
 		} else {
 			utils.SendFailResponse(w,"failed to save looked to db.")
@@ -92,6 +102,10 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		likedUserId, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
+		if len(likedUserId.Id) == 0 {
+			utils.SendFailResponseWithCode(w, "User is not set!", http.StatusBadRequest)
+			return
+		}
 		if !ok {
 			return
 		}
@@ -99,15 +113,15 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		if utils.DoesArrayContain(userData.LikedBy, likedUserId.Id) {
 			if userFullDataStorage.Manager.SaveMatch(loginData.Id, likedUserId.Id) &&
 				userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
-				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.CreatedMatchType, likedUserId.Id)
-				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedMatchType, loginData.Id)
+				realtimeDataDb.GetManager().PublishMessage(loginData.Id, realtimeDataDb.CreatedMatchType, likedUserId.Id)
+				realtimeDataDb.GetManager().PublishMessage(likedUserId.Id, realtimeDataDb.CreatedMatchType, loginData.Id)
 				utils.SendSuccessResponse(w)
 			} else {
 				utils.SendFailResponse(w,"failed to save matched to db.")
 			}
 		} else {
 			if userFullDataStorage.Manager.SaveLiked(likedUserId.Id, loginData.Id) {
-				notificationsBroker.GetManager().PublishMessage(likedUserId.Id, notificationsBroker.CreatedLikeType, loginData.Id)
+				realtimeDataDb.GetManager().PublishMessage(likedUserId.Id, realtimeDataDb.CreatedLikeType, loginData.Id)
 				utils.SendSuccessResponse(w)
 			} else {
 				utils.SendFailResponse(w,"failed to save liked to db.")
@@ -121,10 +135,10 @@ func LikeActionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if isMatchDelete, ok := userFullDataStorage.Manager.DeleteLikeOrMatch(*loginData, likedId); ok {
 			if isMatchDelete {
-				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedMatchType, loginData.Id)
-				notificationsBroker.GetManager().PublishMessage(loginData.Id, notificationsBroker.DeletedMatchType, likedId)
+				realtimeDataDb.GetManager().PublishMessage(likedId, realtimeDataDb.DeletedMatchType, loginData.Id)
+				realtimeDataDb.GetManager().PublishMessage(loginData.Id, realtimeDataDb.DeletedMatchType, likedId)
 			} else {
-				notificationsBroker.GetManager().PublishMessage(likedId, notificationsBroker.DeletedLikeType, loginData.Id)
+				realtimeDataDb.GetManager().PublishMessage(likedId, realtimeDataDb.DeletedLikeType, loginData.Id)
 			}
 			utils.SendSuccessResponse(w)
 		} else {

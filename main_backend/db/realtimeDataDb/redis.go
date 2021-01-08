@@ -1,4 +1,4 @@
-package notificationsBroker
+package realtimeDataDb
 
 import (
 	"context"
@@ -47,26 +47,40 @@ func (m *ManagerStruct) CloseConnection() {
 }
 
 func (m *ManagerStruct) PublishMessage(channelId, mType, originId string) {
-	idxKey := channelId + ":lastWritten"
 	message := model.Notification{Type: mType, User: originId}
-	//index, err := m.client.Get(context.TODO(), idxKey).Int()
-	//if err != nil {
-	//	logrus.Errorf("Error getting lastWrittenIndex from redis: %v", err)
-	//	index = 0
-	//}
+
 	body, err := json.Marshal(message)
 	if err != nil {
 		logrus.Errorf("Error marshal message for notif: %v", err)
 		return
 	}
-	res := m.client.Publish(context.TODO(), channelId, body)
-	m.client.Incr(context.TODO(), idxKey)
-	logrus.Infof("Published message: %v to channel %v; err = %v", message, channelId, res.Err())
+
+	if m.IsUserOnline(channelId) {
+		res := m.client.Publish(context.TODO(), channelId, body)
+		logrus.Infof("Published message: %v to channel %v; err = %v", message, channelId, res.Err())
+	} else {
+		m.addCachedMessageForClient(channelId, body)
+		logrus.Infof("Cached message for %v", channelId)
+	}
+}
+
+func (m *ManagerStruct) IsUserOnline(userId string) bool {
+	is, _ := m.client.Get(context.TODO(), fmt.Sprintf("%v:online", userId)).Result()
+	//if err != nil {
+	//	logrus.Errorf("Error getting user online state from redis: %v, res = %v", err, is)
+	//}
+	return is == "1"
+}
+
+func (m *ManagerStruct) addCachedMessageForClient(userId string, message []byte) {
+	if err := m.client.RPush(context.TODO(), fmt.Sprintf("%v:cached", userId), message).Err(); err != nil {
+		logrus.Errorf("Error pushing message to client cache: %v", err)
+	}
 }
 
 var manager ManagerStruct
 
-func GetManager() dao.NotificationsBroker {
+func GetManager() dao.RealtimeDataDb {
 	return &manager
 }
 

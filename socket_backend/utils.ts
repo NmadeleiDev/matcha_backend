@@ -3,13 +3,16 @@ import CONSTANTS from "./config";
 import * as storage from './storageStub'
 import {Socket} from "socket.io";
 import {MongoManager} from "./db/mongo/mongo";
+import {notificationsClient} from "./db/redis/notifications";
 
 
 export function setOnlineState(id: string, state: boolean) {
-    MongoManager.setUserOnlineState(id, state)
-        .then(() => console.log(`Set online=${state} for user ${id}`))
-        .catch((e) => console.warn(`Error setting online=${state} for user ${id}! Error: ${e.toString()}`))
-        .finally(() => notifyAllUsersAboutStatusChange(id, state))
+    // MongoManager.setUserOnlineState(id, state)
+    //     .then(() => console.log(`Set online=${state} for user ${id}`))
+    //     .catch((e) => console.warn(`Error setting online=${state} for user ${id}! Error: ${e.toString()}`))
+    //     .finally(() => notifyAllUsersAboutStatusChange(id, state))
+    notificationsClient.setOnlineState(id, state)
+    notifyAllUsersAboutStatusChange(id, state)
 }
 
 function notifyAllUsersAboutStatusChange(id: string, status: boolean) {

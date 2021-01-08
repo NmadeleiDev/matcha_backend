@@ -12,7 +12,7 @@ type UserFullDataStorage interface {
 
 	CreateUser(user model.FullUserData) bool
 	FindUserAndUpdateGeo(user model.LoginData, geo model.Coordinates) (model.FullUserData, error)
-	GetFullUserData(user model.LoginData, variant string) (model.FullUserData, error) // variant: private/public/full
+	GetFullUserData(user model.LoginData, isPublic bool) (model.FullUserData, error) // variant: private/public/full
 	GetShortUserData(user model.LoginData) (model.ShortUserData, error)
 	GetUserDataWithCustomProjection(user model.LoginData, projectFields []string, doInclude bool) model.FullUserData
 	UpdateUser(user model.FullUserData) bool
@@ -79,11 +79,12 @@ type UserMetaDataStorage interface {
 	AuthUserBySessionId(w http.ResponseWriter, r *http.Request) *model.LoginData
 }
 
-type NotificationsBroker interface {
+type RealtimeDataDb interface {
 	MakeConnection()
 	CloseConnection()
 
 	PublishMessage(channelId, mType, originId string)
+	IsUserOnline(userId string) bool
 }
 
 type WsDataManager interface {

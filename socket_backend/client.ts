@@ -14,6 +14,6 @@ export function initClient(userId: string, socket: Socket) {
     storage.getUsers().set(userId, user)
     utils.setOnlineState(userId, true)
 
-    notificationsClient.subscribe(userId)
+    notificationsClient.subscribe(userId).catch((e) => console.warn(e))
     handlers.addSocketHandlers(userId, socket)
 }
