@@ -97,14 +97,7 @@ app.delete("/img/:id", function (req, res) {
         status: false,
         data: 'error'
     }
-    // const imageIds = req.body.images
     const imageId = req.params.id
-
-    // if (!Array.isArray(imageIds)) {
-    //     response.data = `"images" field must be array; ${typeof imageIds} given`
-    //     res.end(JSON.stringify(response))
-    //     return
-    // }
 
     mongoFuncs.deleteImageData([imageId]).then(result => {
         console.log("Delete result: ", result)

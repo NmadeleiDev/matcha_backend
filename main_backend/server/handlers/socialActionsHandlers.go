@@ -46,7 +46,7 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 			userData.Tags = strings.Split(
 				strings.ReplaceAll(r.URL.Query().Get("tags"), " ", ""), ",")
 		}
-		log.Infof("UserData for strangers: %v", userData)
+		//log.Infof("UserData for strangers: %v", userData)
 
 		strangers, ok := userFullDataStorage.Manager.GetFittingUsers(userData)
 		for i, acc := range strangers {

@@ -150,7 +150,7 @@ async function deleteImagesIdFromUserImages(imageIds, userId) {
     console.log("Updating: ", userId, update)
     try {
         const res = await userCollection.updateOne({id: userId}, update)
-        // console.log("Update (delete images) res: ", res)
+        console.log("Update (delete images) res: ", res.deletedCount)
         return true
     } catch (e) {
         console.log(e)
@@ -160,17 +160,31 @@ async function deleteImagesIdFromUserImages(imageIds, userId) {
 
 async function deleteImageData(imageIds) {
     const collection = client.db("media").collection("images");
+    const images = []
+    const filter = { _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }}
 
-    const items = await mongoFind(collection, { _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }})
-    if (items.length < 1)
+    try {
+        images.push(...(await collection.find(filter)))
+    } catch (e) {
+        console.log("Error finding images: ", e)
         return null
-    const userId = items[0].id
+    }
+    if (images.length < 1)
+        return null
+    const userId = images[0].id
 
-    if (!(await deleteImagesIdFromUserImages(items.map(item => item._id), userId))) {
+    if (!(await deleteImagesIdFromUserImages(images.map(item => item._id), userId))) {
         return null
     }
 
-    return items.map(item => item.filename)
+    try {
+        await collection.deleteMany(filter)
+    } catch (e) {
+        console.log("Error deleting images: ", e)
+        return null
+    }
+
+    return images.map(item => item.filename)
 }
 
 exports.initConnection = initConnection;
