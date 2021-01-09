@@ -112,9 +112,13 @@ app.delete("/img/:id", function (req, res) {
     }).catch((e) => console.error(e))
 })
 
-app.get("/img/*", function (req, res) {
-    const fileId = req.params[0];
+app.get("/img/:id", function (req, res) {
+    const fileId = req.params.id;
     mongoFuncs.getFileByDocumentId(fileId).then(data => {
+        if (!data) {
+            res.json({status: false, data: 'File not found'}).status(404)
+            return
+        }
         console.log("Got image data: ", data);
         res.sendFile(STORAGE_PATH + data.filename);
     }).catch("Error gettign image data: ", console.log);
