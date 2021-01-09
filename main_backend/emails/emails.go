@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
-	"strings"
 
 	"backend/dao"
 
@@ -20,10 +19,10 @@ var host = os.Getenv("PROJECT_HOST")
 
 func (m *EmailManager) SendPasswordResetEmail(to, key string) {
 	var link string
-	if strings.Contains(host, "localhost") {
+	if len(host) == 0 {
 		link = "http://localhost:" + os.Getenv("PROJECT_PORT") + "/reset?k=" + key
 	} else {
-		link = "https://aim-love.ga/reset?k=" + key
+		link = fmt.Sprintf("https://%v/reset?k=%v", host, key)
 	}
 
 	template := `
@@ -38,10 +37,10 @@ func (m *EmailManager) SendPasswordResetEmail(to, key string) {
 
 func (m *EmailManager) SendAccountVerificationKey(to, key string) {
 	var link string
-	if strings.Contains(host, "localhost") {
+	if len(host) == 0 {
 		link = "http://localhost:" + os.Getenv("PROJECT_PORT") + "/verify/" + key
 	} else {
-		link = "https://aim-love.ga/verify/" + key
+		link = fmt.Sprintf("https://%v/email/verify/%v", host, key)
 	}
 	body := `<h3>Hello from Matcha!</h3><p>To verify this email address, follow this <a href="` + link + `">link</a></p>`
 	m.sendEmailFromService(to, "Verify email", body)
@@ -49,10 +48,10 @@ func (m *EmailManager) SendAccountVerificationKey(to, key string) {
 
 func (m *EmailManager) SendEmailVerificationKey(to, key string)  {
 	var link string
-	if strings.Contains(host, "localhost") {
+	if len(host) == 0 {
 		link = fmt.Sprintf("http://localhost:%v/email/verify?key=%v", os.Getenv("PROJECT_PORT"), key)
 	} else {
-		link = fmt.Sprintf("https://aim-love.ga/email/verify?key=%v", key)
+		link = fmt.Sprintf("https://%v/email/verify?key=%v", host, key)
 	}
 	body := `<h3>Change email</h3><p>To verify this new email address, follow this <a href="` + link + `">link</a></p>`
 	m.sendEmailFromService(to, "Change email", body)
