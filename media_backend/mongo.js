@@ -145,7 +145,7 @@ async function getFileByDocumentId(id) {
 async function deleteImagesIdFromUserImages(imageIds, userId) {
     const update = {$pullAll: {images: imageIds}}
 
-    const userCollection = client.db("matcha").collection("users");
+    const userCollection = client.db("matcha").collection("users")
 
     console.log("Updating: ", userId, update)
     try {
@@ -173,7 +173,7 @@ async function deleteImageData(imageIds) {
         return null
     const userId = images[0].id
 
-    if (!(await deleteImagesIdFromUserImages(images.map(item => item._id), userId))) {
+    if (!(await deleteImagesIdFromUserImages(images.map(item => item._id.toString()), userId))) {
         return null
     }
 
