@@ -1,6 +1,7 @@
 package userMetaDataStorage
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -35,23 +36,27 @@ VALUES ($1, $2, $3, $4)` // здесь session_key создается, чтоб�
 	return key, true
 }
 
-func (m *ManagerStruct) LoginUser(loginData *model.LoginData) bool {
+func (m *ManagerStruct) LoginUser(loginData *model.LoginData) error {
 	var truePassword string
+	var accState int
 
 	query := `
-SELECT id, password FROM ` + userDataTable + ` 
-WHERE email=$1 AND acc_state=2`
+SELECT id, password, acc_state FROM ` + userDataTable + ` 
+WHERE email=$1`
 
 	row := m.Conn.QueryRow(query, loginData.Email)
-	if err := row.Scan(&loginData.Id, &truePassword); err != nil {
+	if err := row.Scan(&loginData.Id, &truePassword, &accState); err != nil {
 		log.Error("Error getting user info: ", err)
-		return false
+		return err
+	}
+	if accState != 2 {
+		return fmt.Errorf("STATE")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(truePassword), []byte(loginData.Password)); err != nil {
 		log.Error("Error verifying password: ", err)
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 func (m *ManagerStruct) CreateResetEmailRecord(userId, email, key string) bool {

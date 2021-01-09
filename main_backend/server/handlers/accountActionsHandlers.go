@@ -48,7 +48,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if userMetaDataStorage.Manager.LoginUser(loginData) {
+		if err := userMetaDataStorage.Manager.LoginUser(loginData); err == nil {
 			var err error
 			var userData model.FullUserData
 
@@ -71,7 +71,11 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			utils.SendFailResponseWithCode(w,"incorrect user data", http.StatusUnauthorized)
+			if err.Error() == "STATE" {
+				utils.SendFailResponseWithCode(w,"account not verified", http.StatusUnauthorized)
+			} else {
+				utils.SendFailResponseWithCode(w,"incorrect user data", http.StatusUnauthorized)
+			}
 		}
 	}
 }

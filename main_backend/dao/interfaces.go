@@ -47,7 +47,7 @@ type UserMetaDataStorage interface {
 	CloseConnection()
 
 	CreateUser(userData *model.FullUserData) (string, bool)
-	LoginUser(loginData *model.LoginData) bool
+	LoginUser(loginData *model.LoginData) error
 	DeleteAccount(loginData model.LoginData) error
 
 	SetSessionKeyById(sessionKey string, id string) bool
