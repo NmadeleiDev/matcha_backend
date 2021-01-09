@@ -164,7 +164,7 @@ async function deleteImageData(imageIds) {
     const filter = { _id: { $in: imageIds.map(id => new mongo.ObjectID(id)) }}
 
     try {
-        images.push(...(await collection.find(filter)))
+        images.push(...(await collection.find(filter).toArray()))
     } catch (e) {
         console.log("Error finding images: ", e)
         return null

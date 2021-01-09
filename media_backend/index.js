@@ -115,9 +115,9 @@ app.delete("/img/:id", function (req, res) {
 app.get("/img/*", function (req, res) {
     const fileId = req.params[0];
     mongoFuncs.getFileByDocumentId(fileId).then(data => {
-        console.log(data);
+        console.log("Got image data: ", data);
         res.sendFile(STORAGE_PATH + data.filename);
-    }).catch(console.log);
+    }).catch("Error gettign image data: ", console.log);
 });
 
 app.listen(MEDIA_SERVER_PORT, function(a) {

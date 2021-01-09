@@ -10,7 +10,7 @@ async function deleteImagesFromStorage(filenames) {
         try {
             fs.unlinkSync(filename)
         } catch (e) {
-            console.log(e)
+            console.log("Error deleting files: ", e)
         }
     }
 }
