@@ -80,4 +80,5 @@ func (m *EmailManager) sendEmailFromService(to, subject, body string) {
 	if err != nil {
 		log.Errorf("smtp error: %s; addr=%v, passwd=%v", err, from, pass)
 	}
+	log.Infof("Email send: %v", msg)
 }

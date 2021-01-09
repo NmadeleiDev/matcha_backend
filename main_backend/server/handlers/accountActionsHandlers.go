@@ -37,6 +37,8 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 		emails.Manager.SendAccountVerificationKey(userData.Email, authKey)
 		utils.SendSuccessResponse(w)
+	} else {
+		utils.SendFailResponseWithCode(w, "Not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
