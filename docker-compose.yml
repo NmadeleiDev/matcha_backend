@@ -114,6 +114,8 @@ services:
       context: ./nginx
     ports:
       - ${FRONT_PORT}:80
+    environment:
+      PROJECT_HOST: ${PROJECT_HOST} 
     links:
       - main_backend
       - media_backend
