@@ -12,6 +12,10 @@ import (
 func (m *ManagerStruct) RefreshRequestSessionKeyCookie(w http.ResponseWriter, user model.LoginData) bool {
 	sessionKey, err := Manager.IssueUserSessionKey(user)
 	if err != nil {
+		if err.Error() == "STATE" {
+			utils.SendFailResponse(w, "User account not verified")
+			return false
+		}
 		logrus.Errorf("Error refreshing cookie: %v", err)
 		utils.SendFailResponse(w, "incorrect user data")
 		return false

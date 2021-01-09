@@ -79,7 +79,7 @@ func (m *ManagerStruct) InitTables() {
     password      varchar(255) not null,
     email varchar(128) unique,
     session_key   varchar(128) default NULL::character varying,
-	acc_state		integer default 2
+	acc_state		integer default 0
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
 		log.Fatal("Error creating table: ", err)
@@ -119,21 +119,6 @@ func (m *ManagerStruct) InitTables() {
     value      varchar(255) not null,
     hash varchar(32) unique not null,
     times_mentioned   integer default 1
-)`
-	if _, err := m.Conn.Exec(query); err != nil {
-		log.Fatal("Error creating table: ", err)
-	}
-
-	query = `create table if not exists ` + messagesTable + `
-(
-    id            varchar(256)       not null
-        constraint users_pk
-            primary key,
-    sender      varchar(128) not null,
-    recipient      varchar(128) not null,
-    state integer default 0,
-	date integer not null,
-    text   varchar(1024) default ''
 )`
 	if _, err := m.Conn.Exec(query); err != nil {
 		log.Fatal("Error creating table: ", err)
@@ -244,7 +229,7 @@ func (m *ManagerStruct) VerifyUserAccountState(key string) (string, bool) {
 
 	query := `
 UPDATE ` + userDataTable + ` 
-SET acc_state=0, session_key=$2 
+SET acc_state=2, session_key=$2 
 WHERE session_key=$1`
 
 	if _, err := m.Conn.Exec(query, key, newSessionKey); err != nil {
@@ -267,9 +252,9 @@ WHERE id = $1`
 		log.Error("Error getting user info: ", err)
 		return "", err
 	}
-	//if state == 2 { для разработки закоментил
-	//	return "", errors.New("STATE")
-	//}
+	if state != 2 { // для разработки закоментил
+		return "", errors.New("STATE")
+	}
 	if err := bcrypt.CompareHashAndPassword([]byte(truePassword), []byte(user.Password)); err != nil {
 		log.Error("Error verifying password: ", err)
 		return "", err
