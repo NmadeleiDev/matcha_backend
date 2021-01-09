@@ -150,7 +150,7 @@ async function deleteImagesIdFromUserImages(imageIds, userId) {
     console.log("Updating: ", userId, update)
     try {
         const res = await userCollection.updateOne({id: userId}, update)
-        console.log("Update (delete images) res: ", res.deletedCount)
+        console.log("Update (delete images) res: ", res)
         return true
     } catch (e) {
         console.log(e)
