@@ -104,7 +104,7 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 			if len(host) == 0 {
 				url = fmt.Sprintf("http://localhost:%v", port)
 			} else {
-				url = fmt.Sprintf("http://%v:%v", host, port)
+				url = fmt.Sprintf("https://%v", host)
 			}
 			http.Redirect(w, r, url, http.StatusPermanentRedirect)
 			//data, err := userFullDataStorage.Manager.GetFullUserData(login, true)
