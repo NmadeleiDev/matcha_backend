@@ -40,7 +40,7 @@ func (m *ManagerStruct) LoginUser(loginData *model.LoginData) bool {
 
 	query := `
 SELECT id, password FROM ` + userDataTable + ` 
-WHERE email = $1`
+WHERE email=$1 AND acc_state=2`
 
 	row := m.Conn.QueryRow(query, loginData.Email)
 	if err := row.Scan(&loginData.Id, &truePassword); err != nil {

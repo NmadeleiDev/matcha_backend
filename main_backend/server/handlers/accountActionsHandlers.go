@@ -66,8 +66,9 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 				utils.SendFailResponse(w,"Failed to get user data")
 			} else {
 				userData.Id = loginData.Id
-				userMetaDataStorage.Manager.RefreshRequestSessionKeyCookie(w, *loginData)
-				utils.SendDataResponse(w, userData)
+				if userMetaDataStorage.Manager.RefreshRequestSessionKeyCookie(w, *loginData) {
+					utils.SendDataResponse(w, userData)
+				}
 			}
 		} else {
 			utils.SendFailResponseWithCode(w,"incorrect user data", http.StatusUnauthorized)
