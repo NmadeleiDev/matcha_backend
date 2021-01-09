@@ -38,9 +38,9 @@ func (m *EmailManager) SendPasswordResetEmail(to, key string) {
 func (m *EmailManager) SendAccountVerificationKey(to, key string) {
 	var link string
 	if len(host) == 0 {
-		link = "http://localhost:" + os.Getenv("PROJECT_PORT") + "/verify/" + key
+		link = fmt.Sprintf("http://localhost:%v/api/main/verify/%v", os.Getenv("PROJECT_PORT"), key)
 	} else {
-		link = fmt.Sprintf("https://%v/email/verify/%v", host, key)
+		link = fmt.Sprintf("https://%v/api/main/verify/%v", host, key)
 	}
 	body := `<h3>Hello from Matcha!</h3><p>To verify this email address, follow this <a href="` + link + `">link</a></p>`
 	m.sendEmailFromService(to, "Verify email", body)

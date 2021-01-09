@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -92,16 +93,26 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 	newSessionKey, ok := userMetaDataStorage.Manager.VerifyUserAccountState(key)
 	if ok {
 		utils.SetCookieForDay(w, "session_id", newSessionKey)
-		login, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
+		_, err := userMetaDataStorage.Manager.GetUserLoginDataBySession(newSessionKey)
 		if err != nil {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
-			data, err := userFullDataStorage.Manager.GetFullUserData(login, true)
-			if err != nil {
-				utils.SendFailResponse(w, "Failed to get user data")
+			var url string
+			host := os.Getenv("PROJECT_HOST")
+			port := os.Getenv("PROJECT_PORT")
+
+			if len(host) == 0 {
+				url = fmt.Sprintf("http://localhost:%v", port)
 			} else {
-				utils.SendDataResponse(w, data)
+				url = fmt.Sprintf("http://%v:%v", host, port)
 			}
+			http.Redirect(w, r, url, http.StatusPermanentRedirect)
+			//data, err := userFullDataStorage.Manager.GetFullUserData(login, true)
+			//if err != nil {
+			//	utils.SendFailResponse(w, "Failed to get user data")
+			//} else {
+			//	utils.SendDataResponse(w, data)
+			//}
 		}
 	} else {
 		utils.SendFailResponse(w, "failed to verify user")
