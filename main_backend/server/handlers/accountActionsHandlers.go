@@ -280,6 +280,24 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func UpdateLocationHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPut {
+		loginData := userMetaDataStorage.Manager.AuthUserBySessionId(w, r)
+		location, ok := utils.UnmarshalHttpBodyToLocation(w, r)
+		if loginData == nil || !ok {
+			return
+		}
+
+		if userFullDataStorage.Manager.UpdateLocation(loginData.Id, *location) {
+			utils.SendSuccessResponse(w)
+		} else {
+			utils.SendFailResponseWithCode(w, "Error", http.StatusInternalServerError)
+		}
+	} else {
+		utils.SendFailResponseWithCode(w, "Not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func EmailActionsHandler(w http.ResponseWriter, r *http.Request) {
 	const (
 		changeEmailAction = "change"

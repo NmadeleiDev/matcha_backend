@@ -16,6 +16,7 @@ type UserFullDataStorage interface {
 	GetShortUserData(user model.LoginData) (model.ShortUserData, error)
 	GetUserDataWithCustomProjection(user model.LoginData, projectFields []string, doInclude bool) model.FullUserData
 	UpdateUser(user model.FullUserData) bool
+	UpdateLocation(userId string, loc model.Coordinates) bool
 	SetNewEmail(userId, email string) error
 	DeleteAccount(acc model.LoginData) error
 	DeleteAccountRecordsFromOtherUsers(acc model.LoginData) error

@@ -42,8 +42,14 @@ func (d *FullUserData) ConvertFromDbCoords() {
 }
 
 func (d *FullUserData) ConvertToDbCoords() {
-	d.MongoLocation.Type = "Point"
-	d.MongoLocation.Coordinates = []float64{d.GeoPosition.Lon, d.GeoPosition.Lat}
+	d.MongoLocation = d.GeoPosition.ConvertToMongoCoords()
+}
+
+func (p *Coordinates) ConvertToMongoCoords() MongoCoors {
+	return MongoCoors{
+		Type: "Point",
+		Coordinates: []float64{p.Lon, p.Lat},
+	}
 }
 
 type ShortUserData struct {

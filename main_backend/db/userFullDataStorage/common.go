@@ -386,3 +386,19 @@ func (m *ManagerStruct) GetUserImages(id string) []string {
 
 	return container.Images
 }
+
+func (m *ManagerStruct) UpdateLocation(userId string, loc model.Coordinates) bool {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	opts := options.Update()
+	filter := bson.M{"id": userId}
+	update := bson.M{"$set": bson.M{"position": loc.ConvertToMongoCoords()}}
+	_, err := userCollection.UpdateOne(context.TODO(),filter, update,opts)
+	if  err != nil {
+		logrus.Error("Error finding user document: ", err)
+		return false
+	}
+
+	return true
+}

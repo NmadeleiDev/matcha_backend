@@ -20,6 +20,7 @@ func StartServer(port string) {
 	router.HandleFunc("/reset", handlers.ResetPasswordHandler)
 
 	router.HandleFunc("/account", handlers.ManageOwnAccountHandler)
+	router.HandleFunc("/location", handlers.UpdateLocationHandler)
 	router.HandleFunc("/email/{action}", handlers.EmailActionsHandler)
 	router.HandleFunc("/actions/{action}", handlers.GetOwnActionsHandler)
 	router.HandleFunc("/data/{id}", handlers.GetUserDataHandler) // получение данных любого юзера (только для залогиненных юзеров)

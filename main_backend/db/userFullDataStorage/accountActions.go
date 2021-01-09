@@ -16,7 +16,7 @@ func (m *ManagerStruct) CreateUser(user model.FullUserData) bool {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
 
-	position := MongoCoords{Type: "Point", Coordinates: []float64{user.GeoPosition.Lon, user.GeoPosition.Lat}}
+	position := user.GeoPosition.ConvertToMongoCoords()
 
 	userDocument := bson.D{
 		{"id", user.Id},
@@ -115,7 +115,7 @@ func (m *ManagerStruct) FindUserAndUpdateGeo(user model.LoginData, geo model.Coo
 	userCollection := database.Collection(userDataCollection)
 
 	filter := bson.M{"id": user.Id}
-	update = bson.M{"$set": bson.D{{"position",model.MongoCoors{Type: "Point", Coordinates: []float64{geo.Lon, geo.Lat}}}}}
+	update = bson.M{"$set": bson.D{{"position",geo.ConvertToMongoCoords()}}}
 	container := model.FullUserData{}
 
 	projection := bson.M{"banned_user_ids": 0}
