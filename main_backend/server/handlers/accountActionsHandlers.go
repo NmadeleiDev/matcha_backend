@@ -287,6 +287,7 @@ func UpdateLocationHandler(w http.ResponseWriter, r *http.Request) {
 		if loginData == nil || !ok {
 			return
 		}
+		log.Infof("Got loc update for %v: %v", loginData.Id, location)
 
 		if userFullDataStorage.Manager.UpdateLocation(loginData.Id, *location) {
 			utils.SendSuccessResponse(w)
