@@ -37,10 +37,12 @@ type UserFullDataStorage interface {
 
 	// utils
 	GetUserData(loginData model.LoginData, isPublic bool) (model.FullUserData, error)
+	GetUserEmailByUsername(acc model.LoginData) string
 
 	SaveReport(report model.Report) bool
 
 	CreateLocationIndex()
+	CreateUniqueIndex(field string)
 }
 
 type UserMetaDataStorage interface {

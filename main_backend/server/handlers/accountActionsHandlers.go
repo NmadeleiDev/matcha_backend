@@ -27,12 +27,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 		authKey, ok := userMetaDataStorage.Manager.CreateUser(userData)
 		if !ok {
-			utils.SendFailResponse(w, "User already exists")
+			utils.SendFailResponseWithCode(w, "user email already exists", http.StatusNotAcceptable)
 			return
 		}
 
 		if !userFullDataStorage.Manager.CreateUser(*userData) {
-			utils.SendFailResponse(w, "failed to create user")
+			_ = userMetaDataStorage.Manager.DeleteAccount(model.LoginData{Id: userData.Id})
+			utils.SendFailResponseWithCode(w, "username already exists", http.StatusNotAcceptable)
 			return
 		}
 
@@ -48,6 +49,9 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 		loginData, ok := utils.UnmarshalHttpBodyToLoginData(w, r)
 		if !ok {
 			return
+		}
+		if len(loginData.Email) < 1 && len(loginData.Username) > 1 {
+			loginData.Email = userFullDataStorage.Manager.GetUserEmailByUsername(*loginData)
 		}
 		if err := userMetaDataStorage.Manager.LoginUser(loginData); err == nil {
 			var err error
@@ -107,12 +111,6 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 				url = fmt.Sprintf("https://%v", host)
 			}
 			http.Redirect(w, r, url, http.StatusPermanentRedirect)
-			//data, err := userFullDataStorage.Manager.GetFullUserData(login, true)
-			//if err != nil {
-			//	utils.SendFailResponse(w, "Failed to get user data")
-			//} else {
-			//	utils.SendDataResponse(w, data)
-			//}
 		}
 	} else {
 		utils.SendFailResponse(w, "failed to verify user")

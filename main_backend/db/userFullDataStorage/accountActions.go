@@ -283,3 +283,20 @@ func (m *ManagerStruct) DeleteAccountRecordsFromOtherUsers(acc model.LoginData) 
 
 	return nil
 }
+
+func (m *ManagerStruct) GetUserEmailByUsername(acc model.LoginData) string {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+	cont := model.LoginData{}
+
+	filter := bson.M{"username": acc.Username}
+	projection := bson.M{"email": 1}
+	opts := options.FindOne().SetProjection(projection)
+
+	err := userCollection.FindOne(context.Background(), filter, opts).Decode(&cont)
+	if err != nil {
+		log.Error("Error finding user document: ", err)
+		return ""
+	}
+	return cont.Email
+}

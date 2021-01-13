@@ -61,6 +61,22 @@ func (m *ManagerStruct) MakeConnection() {
 	logrus.Info("Connected.")
 }
 
+func (m *ManagerStruct) CreateUniqueIndex(field string) {
+	database := m.Conn.Database(mainDBName)
+	userCollection := database.Collection(userDataCollection)
+
+	yep := true
+
+	if res, err := userCollection.Indexes().CreateOne(
+		context.TODO(),
+		mongo.IndexModel{Keys: bson.D{{field, 1}},
+		Options: &options.IndexOptions{Unique: &yep}}); err != nil {
+		logrus.Errorf("Error creating unique index: %v", err)
+	} else {
+		logrus.Infof("Created index: %v", res)
+	}
+}
+
 func (m *ManagerStruct) CreateLocationIndex() {
 	database := m.Conn.Database(mainDBName)
 	userCollection := database.Collection(userDataCollection)
@@ -73,7 +89,6 @@ func (m *ManagerStruct) CreateLocationIndex() {
 	} else {
 		logrus.Infof("Created index: %v", res)
 	}
-
 }
 
 func (m *ManagerStruct) CloseConnection() {

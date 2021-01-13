@@ -38,13 +38,25 @@ VALUES ($1, $2, $3, $4)` // здесь session_key создается, чтоб�
 
 func (m *ManagerStruct) LoginUser(loginData *model.LoginData) error {
 	var truePassword string
+	var query string
+	var cred string
 	var accState int
 
-	query := `
+	if len(loginData.Username) > 1 {
+		query = `
+SELECT id, password, acc_state FROM ` + userDataTable + ` 
+WHERE username=$1`
+		cred = loginData.Username
+	} else if len(loginData.Email) > 1 {
+		query = `
 SELECT id, password, acc_state FROM ` + userDataTable + ` 
 WHERE email=$1`
+		cred = loginData.Email
+	} else {
+		return fmt.Errorf("email and username are not set")
+	}
 
-	row := m.Conn.QueryRow(query, loginData.Email)
+	row := m.Conn.QueryRow(query, cred)
 	if err := row.Scan(&loginData.Id, &truePassword, &accState); err != nil {
 		log.Error("Error getting user info: ", err)
 		return err

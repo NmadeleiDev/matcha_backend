@@ -74,9 +74,10 @@ type MongoCoors struct {
 }
 
 type LoginData struct {
-	Id		string	`json:"id,omitempty" bson:"id,omitempty"`
-	Email    string `json:"email" bson:"email"`
-	Password string `json:"password"`
+	Id		string	`json:"id" bson:"id,omitempty"`
+	Email    string `json:"email,omitempty" bson:"email"`
+	Username  string   `json:"username,omitempty" bson:"username"`
+	Password string `json:"password,omitempty"`
 }
 
 type Chat struct {
