@@ -23,6 +23,9 @@ func GetStrangersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userData, err := userFullDataStorage.Manager.GetFullUserData(*user, false)
+		mainUserDto := dto.GetUserDTO(&userData).PrepareUserDataForClient()
+		userData = *mainUserDto.GetUser()
+
 		if err != nil {
 			log.Error("Failed to get user data from mongo")
 			utils.SendFailResponse(w, "sorry!")

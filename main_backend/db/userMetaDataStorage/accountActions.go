@@ -42,18 +42,13 @@ func (m *ManagerStruct) LoginUser(loginData *model.LoginData) error {
 	var cred string
 	var accState int
 
-	if len(loginData.Username) > 1 {
-		query = `
-SELECT id, password, acc_state FROM ` + userDataTable + ` 
-WHERE username=$1`
-		cred = loginData.Username
-	} else if len(loginData.Email) > 1 {
+	if len(loginData.Email) > 1 {
 		query = `
 SELECT id, password, acc_state FROM ` + userDataTable + ` 
 WHERE email=$1`
 		cred = loginData.Email
 	} else {
-		return fmt.Errorf("email and username are not set")
+		return fmt.Errorf("email is not set")
 	}
 
 	row := m.Conn.QueryRow(query, cred)

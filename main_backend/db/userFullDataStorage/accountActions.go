@@ -293,9 +293,9 @@ func (m *ManagerStruct) GetUserEmailByUsername(acc model.LoginData) string {
 	projection := bson.M{"email": 1}
 	opts := options.FindOne().SetProjection(projection)
 
-	err := userCollection.FindOne(context.Background(), filter, opts).Decode(&cont)
+	err := userCollection.FindOne(context.TODO(), filter, opts).Decode(&cont)
 	if err != nil {
-		log.Error("Error finding user document: ", err)
+		log.Errorf("Error finding user document: %v; filter: %v", err, filter)
 		return ""
 	}
 	return cont.Email

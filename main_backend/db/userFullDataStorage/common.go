@@ -159,6 +159,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		"is_online": 1,
 		"rank": 1,
 		"last_online": 1,
+		"position": 1,
 	}
 
 	user.BannedUserIds = append(user.BannedUserIds, user.Id)
@@ -172,7 +173,7 @@ func (m *ManagerStruct) GetFittingUsers(user model.FullUserData) (results []mode
 		filter["gender"] = user.LookFor
 	}
 
-	user.ConvertFromDbCoords()
+	//user.ConvertFromDbCoords()
 	//logrus.Infof("user before: %v", user)
 
 	if user.UseLocation &&
