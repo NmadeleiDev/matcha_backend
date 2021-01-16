@@ -41,7 +41,6 @@ services:
 
   chat_backend:
     build:
-#      context: chat_backend
       context: socket_backend
     container_name: chat_backend
     environment:
