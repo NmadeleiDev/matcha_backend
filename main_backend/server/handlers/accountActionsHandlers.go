@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"backend/db/userMetaDataStorage"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"backend/db/userFullDataStorage"
+	"backend/db/userMetaDataStorage"
 	"backend/dto"
 	"backend/emails"
 	"backend/hashing"
 	"backend/model"
 	"backend/utils"
-	"fmt"
+
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,14 +103,11 @@ func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
 			utils.SendFailResponse(w,"Failed to get user data")
 		} else {
 			var url string
-			host := os.Getenv("PROJECT_HOST")
-			port := os.Getenv("PROJECT_PORT")
+			schema := utils.GetEnvVar("PROJECT_SCHEMA", "http")
+			host := utils.GetEnvVar("PROJECT_HOST", "localhost")
+			port := utils.GetEnvVar("PROJECT_PORT", "8080")
 
-			if len(host) == 0 {
-				url = fmt.Sprintf("http://localhost:%v", port)
-			} else {
-				url = fmt.Sprintf("https://%v", host)
-			}
+			url = fmt.Sprintf("%v://%v:%v",schema, host, port)
 			http.Redirect(w, r, url, http.StatusPermanentRedirect)
 		}
 	} else {

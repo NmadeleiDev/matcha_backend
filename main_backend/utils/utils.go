@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 
 	"backend/model"
@@ -153,4 +154,12 @@ func UnsafeAtof(src string, alt float64) float64 {
 	} else {
 		return res
 	}
+}
+
+func GetEnvVar(name, def string) string {
+	val := os.Getenv(name)
+	if len(val) == 0 {
+		return def
+	}
+	return val
 }

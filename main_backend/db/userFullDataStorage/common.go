@@ -58,7 +58,7 @@ func (m *ManagerStruct) MakeConnection() {
 	if err = m.Conn.Ping(context.TODO(), readpref.Primary()); err != nil {
 		logrus.Fatal("Error pinging: ", err)
 	}
-	logrus.Info("Connected.")
+	logrus.Info("Connected to mongo")
 }
 
 func (m *ManagerStruct) CreateUniqueIndex(field string) {

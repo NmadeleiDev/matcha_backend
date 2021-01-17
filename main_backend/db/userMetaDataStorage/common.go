@@ -49,6 +49,7 @@ func (m *ManagerStruct) MakeConnection() {
 	if err != nil {
 		log.Fatal("Error pinging postgres: ", err)
 	}
+	log.Infof("Connected to postgres")
 	m.Conn = conn
 }
 
