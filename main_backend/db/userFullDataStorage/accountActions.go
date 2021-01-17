@@ -264,8 +264,10 @@ func (m *ManagerStruct) DeleteAccount(acc model.LoginData) error {
 
 	filterDelete := bson.M{"id": acc.Id}
 
-	if _, err := userCollection.DeleteOne(context.TODO(), filterDelete); err != nil {
+	if result, err := userCollection.DeleteOne(context.TODO(), filterDelete); err != nil {
 		return err
+	} else if result.DeletedCount != 1 {
+		return fmt.Errorf("user to delete not found")
 	}
 
 	return nil

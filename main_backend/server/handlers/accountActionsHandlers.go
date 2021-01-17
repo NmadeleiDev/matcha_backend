@@ -258,15 +258,15 @@ func ManageOwnAccountHandler(w http.ResponseWriter, r *http.Request) {
 			_ = userMetaDataStorage.Manager.DecrTagById(tagId)
 		}
 		if err := userFullDataStorage.Manager.DeleteAccount(loginData); err != nil {
-			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete user data: %v", err))
+			utils.SendFailResponseWithCode(w, fmt.Sprintf("Failed to delete user data: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if err := userMetaDataStorage.Manager.DeleteAccount(loginData); err != nil {
-			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete user account metadata: %v", err))
+			utils.SendFailResponseWithCode(w, fmt.Sprintf("Failed to delete user account metadata: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if err := userFullDataStorage.Manager.DeleteAccountRecordsFromOtherUsers(loginData); err != nil {
-			utils.SendFailResponse(w, fmt.Sprintf("Failed to delete records from other users accounts: %v", err))
+			utils.SendFailResponseWithCode(w, fmt.Sprintf("Failed to delete records from other users accounts: %v", err), http.StatusInternalServerError)
 			return
 		}
 		emails.Manager.SendGoodbyeMessage(userData.Email)
