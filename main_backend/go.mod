@@ -7,9 +7,9 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.2
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/klauspost/compress v1.9.8 // indirect
 	github.com/lib/pq v1.4.0
-	github.com/segmentio/kafka-go v0.4.8 // indirect
 	github.com/sirupsen/logrus v1.5.0
-	go.mongodb.org/mongo-driver v1.3.2
+	go.mongodb.org/mongo-driver v1.5.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 )
